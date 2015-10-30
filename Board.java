@@ -226,6 +226,9 @@ public class Board {
 	public static final long clearGFile = 0xBFBFBFBFBFBFBFBFL;
 	public static final long clearHFile = 0x7F7F7F7F7F7F7F7FL;
 
+	public static final long maskRank3 = 0x0000000000FF0000L;
+	public static final long maskRank6 = 0x0000FF0000000000L;
+
 	public long getWhitePieces() {
 		return WP | WR | WN | WB | WQ | WK; 
 	}
