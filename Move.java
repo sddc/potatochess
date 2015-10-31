@@ -1,37 +1,13 @@
 public class Move {
 
 	public static int firstOneBit(long x) {
-		int pos = 0;
-		long compareBit = 0x0000000000000001L;
-		if(x == 0L) {
-			return -1;
-		}
-
-		while(x != 0L) {
-			if((compareBit & x) == 1L) {
-				return pos;
-			}
-			x = x >>> 1;
-			pos++;
-		}
-		return -1;
+		// =64 when x is 0
+		return Long.numberOfTrailingZeros(x);
 	}
 
 	public static int lastOneBit(long x) {
-		int pos = 63;
-		long compareBit = 0x8000000000000000L;
-		if(x == 0L) {
-			return -1;
-		}
-
-		while(x != 0L) {
-			if((compareBit & x) == 0x8000000000000000L) {
-				return pos;
-			}
-			x = x << 1;
-			pos--;
-		}
-		return -1;
+		// =-1 when x is 0
+		return (int)(63L - Long.numberOfLeadingZeros(x));
 	}
 
 	// +1, +7, +8, +9, -1, -7, -8, -9
