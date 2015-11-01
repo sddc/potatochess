@@ -1,4 +1,17 @@
+import java.util.ArrayList;
+
 public class Move {
+	public static final long[] plus1Mask = genRayMask(1);
+	public static final long[] plus7Mask = genRayMask(7);
+	public static final long[] plus8Mask = genRayMask(8);
+	public static final long[] plus9Mask = genRayMask(9);
+	public static final long[] minus1Mask = genRayMask(-1);
+	public static final long[] minus7Mask = genRayMask(-7);
+	public static final long[] minus8Mask = genRayMask(-8);
+	public static final long[] minus9Mask = genRayMask(-9);
+
+	public static final long[] knightMoves = genKnightMoves();
+	public static final long[] kingMoves = genKingMoves();
 
 	public static int firstOneBit(long x) {
 		// =64 when x is 0
@@ -8,6 +21,55 @@ public class Move {
 	public static int lastOneBit(long x) {
 		// =-1 when x is 0
 		return (int)(63L - Long.numberOfLeadingZeros(x));
+	}
+
+	public static long genSlidingPieceMoves(int piece, int square, long allPieces, long sidePieces) {
+		long moves = 0x0000000000000000L;
+		long m;
+		int blockBit;
+		ArrayList<Mask> masks = new ArrayList<Mask>();
+
+		switch(piece) {
+			case Board.WHITE_BISHOP:
+			case Board.BLACK_BISHOP:
+				masks.add(new Mask(plus7Mask[square], 7));
+				masks.add(new Mask(minus7Mask[square], -7));
+				masks.add(new Mask(plus9Mask[square], 9));
+				masks.add(new Mask(minus9Mask[square], -9));
+				break;
+			case Board.WHITE_QUEEN:
+			case Board.BLACK_QUEEN:
+				masks.add(new Mask(plus7Mask[square], 7));
+				masks.add(new Mask(minus7Mask[square], -7));
+				masks.add(new Mask(plus9Mask[square], 9));
+				masks.add(new Mask(minus9Mask[square], -9));
+			case Board.WHITE_ROOK:
+			case Board.BLACK_ROOK:
+				masks.add(new Mask(plus1Mask[square], 1));
+				masks.add(new Mask(minus1Mask[square], -1));
+				masks.add(new Mask(plus8Mask[square], 8));
+				masks.add(new Mask(minus8Mask[square], -8));
+				break;
+			default:
+				break;
+		}
+
+		for(Mask i : masks) {
+			m = i.squareMask & allPieces;
+			if(m != 0L) {
+				if(i.offset > 0) {
+					blockBit = firstOneBit(m);
+				} else {
+					blockBit = lastOneBit(m);
+				}
+
+				moves |= (i.squareMask ^ i.blockBitMask(blockBit));
+			} else {
+				moves |= i.squareMask;
+			}
+		}
+
+		return moves & ~sidePieces;
 	}
 
 	// +1, +7, +8, +9, -1, -7, -8, -9
@@ -75,38 +137,38 @@ public class Move {
 		return genMask;
 	}
 
-	public static long genPawnPush(boolean side, long x) {
+	public static long genPawnPush(boolean side, long pawnPositions, long allPieces) {
 		// side:
 		// white = true
 		// black = false
 		if(side) {
-			return x << 8;
+			return ~allPieces & (pawnPositions << 8);
 		} else {
-			return x >>> 8;
+			return ~allPieces & (pawnPositions >>> 8);
 		}
 	}
 
-	public static long genDoublePawnPush(boolean side, long x) {
+	public static long genDoublePawnPush(boolean side, long x, long allPieces) {
 		// side:
 		// white = true
 		// black = false
 		if(side) {
-			return (Board.maskRank3 & genPawnPush(side, x)) << 8;
+			return ~allPieces & ((Board.maskRank3 & genPawnPush(side, x, allPieces)) << 8);
 		} else {
-			return (Board.maskRank6 & genPawnPush(side, x)) >>> 8;
+			return ~allPieces & ((Board.maskRank6 & genPawnPush(side, x, allPieces)) >>> 8);
 		}
 	}
 
-	public static long genPawnAttack(boolean side, long x) {
+	public static long genPawnAttack(boolean side, long x, long sidePieces) {
 		// side:
 		// white = true
 		// black = false
 		if(side) {
-			return ((Board.clearHFile & x) << 9) |
-				((Board.clearAFile & x) << 7);
+			return ~sidePieces & (((Board.clearHFile & x) << 9) |
+				((Board.clearAFile & x) << 7));
 		} else {
-			return ((Board.clearAFile & x) >>> 9) |
-				((Board.clearHFile & x) >>> 7);
+			return ~sidePieces & (((Board.clearAFile & x) >>> 9) |
+				((Board.clearHFile & x) >>> 7));
 		}
 	}
 
@@ -176,5 +238,48 @@ public class Move {
 			knightPos = knightPos << 1;
 		}
 		return genMoves;
+	}
+}
+
+class Mask {
+	public long squareMask;
+	public int offset;
+
+	public Mask(long squareMask, int offset) {
+		this.squareMask = squareMask;
+		this.offset = offset;
+	}
+
+	public long blockBitMask(int square) {
+		long m = 0L;
+		switch(offset) {
+			case 1:
+				m = Move.plus1Mask[square];
+				break;
+			case 7:
+				m = Move.plus7Mask[square];
+				break;
+			case 8:
+				m = Move.plus8Mask[square];
+				break;
+			case 9:
+				m = Move.plus9Mask[square];
+				break;
+			case -1:
+				m = Move.minus1Mask[square];
+				break;
+			case -7:
+				m = Move.minus7Mask[square];
+				break;
+			case -8:
+				m = Move.minus8Mask[square];
+				break;
+			case -9:
+				m = Move.minus9Mask[square];
+				break;
+			default:
+				break;
+		}
+		return m;
 	}
 }
