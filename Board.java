@@ -15,17 +15,6 @@ public class Board {
 	public static final int BLACK_QUEEN = -5;
 	public static final int BLACK_KING = -6;
 
-	private int[][] printArray= {
-		{BLACK_ROOK, BLACK_KNIGHT, BLACK_BISHOP, BLACK_QUEEN, BLACK_KING, BLACK_BISHOP, BLACK_KNIGHT, BLACK_ROOK},
-		{BLACK_PAWN, BLACK_PAWN, BLACK_PAWN, BLACK_PAWN, BLACK_PAWN, BLACK_PAWN, BLACK_PAWN, BLACK_PAWN},
-		{EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY},
-		{EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY},
-		{EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY},
-		{EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY, EMPTY},
-		{WHITE_PAWN, WHITE_PAWN, WHITE_PAWN, WHITE_PAWN, WHITE_PAWN, WHITE_PAWN, WHITE_PAWN, WHITE_PAWN},
-		{WHITE_ROOK, WHITE_KNIGHT, WHITE_BISHOP, WHITE_QUEEN, WHITE_KING, WHITE_BISHOP, WHITE_KNIGHT, WHITE_ROOK}
-	};
-
 	public static final int
 		A8=56, B8=57, C8=58, D8=59, E8=60, F8=61, G8=62, H8=63, 
 		A7=48, B7=49, C7=50, D7=51, E7=52, F7=53, G7=54, H7=55, 
@@ -305,120 +294,34 @@ public class Board {
 	public long getBlackKing() {
 		return BK;
 	}
-
-	private void updatePrintArray() {
-		/* todo
-		long[] sets = {WP, WR, WN, WB, WQ, WK, BP, BR, BN, BB, BQ, BK};
-		int setNumber = 1;
-		int k = 63;
-
-		for(long s : sets) {
-			String setString = String.format("%64s", Long.toBinaryString(s)).replace(' ', '0');
-
-			for(int i = 7; i >= 0; i--) { 
-				for(int j = 0; j < 8; j++) {
-					if(setString.charAt(k) == '1') {
-						switch(setNumber) {
-							case 1: temp[i][j] = WHITE_PAWN;
-								break;
-							case 2: temp[i][j] = WHITE_ROOK;
-								break;
-							case 3: temp[i][j] = WHITE_KNIGHT;
-								break;
-							case 4: temp[i][j] = WHITE_BISHOP;
-								break;
-							case 5: temp[i][j] = WHITE_QUEEN;
-								break;
-							case 6: temp[i][j] = WHITE_KING;
-								break;
-							case 7: temp[i][j] = BLACK_PAWN;
-								break;
-							case 8: temp[i][j] = BLACK_ROOK;
-								break;
-							case 9: temp[i][j] = BLACK_KNIGHT;
-								break;
-							case 10: temp[i][j] = BLACK_BISHOP;
-								 break;
-							case 11: temp[i][j] = BLACK_QUEEN;
-								 break;
-							case 12: temp[i][j] = BLACK_KING;
-							default:
-								 break;
-						}
-					}
-					k--;
-				}
-			}
-			k = 63;
-			setNumber++;
-		}
-
-		for(int i = 0; i < 8; i++) {
-			for(int j = 0; j < 8; j++) {
-				switch(temp[i][j]) {
-					case -6: System.out.print("K");
-						 break;
-					case -5: System.out.print("Q");
-						 break;
-					case -4: System.out.print("B");
-						 break;
-					case -3: System.out.print("N");
-						 break;
-					case -2: System.out.print("R");
-						 break;
-					case -1: System.out.print("P");
-						 break;
-					case 0: System.out.print("_");
-						break;
-					case 1: System.out.print("p");
-						break;
-					case 2: System.out.print("r");
-						break;
-					case 3: System.out.print("n");
-						break;
-					case 4: System.out.print("b");
-						break;
-					case 5: System.out.print("q");
-						break;
-					case 6: System.out.print("k");
-						break;
-					default:
-						break;
-				}
-				System.out.print(", ");
-			}
-			System.out.print("\n");
-		}
-		*/
-	}
-
+	
 	private void printPiece(int p) {
 		switch(p) {
-			case -6: System.out.print("K");
+			case -6: System.out.print("k");
 				 break;
-			case -5: System.out.print("Q");
+			case -5: System.out.print("q");
 				 break;
-			case -4: System.out.print("B");
+			case -4: System.out.print("b");
 				 break;
-			case -3: System.out.print("N");
+			case -3: System.out.print("n");
 				 break;
-			case -2: System.out.print("R");
+			case -2: System.out.print("r");
 				 break;
-			case -1: System.out.print("P");
+			case -1: System.out.print("p");
 				 break;
 			case 0: System.out.print(" ");
 				break;
-			case 1: System.out.print("p");
+			case 1: System.out.print("P");
 				break;
-			case 2: System.out.print("r");
+			case 2: System.out.print("R");
 				break;
-			case 3: System.out.print("n");
+			case 3: System.out.print("N");
 				break;
-			case 4: System.out.print("b");
+			case 4: System.out.print("B");
 				break;
-			case 5: System.out.print("q");
+			case 5: System.out.print("Q");
 				break;
-			case 6: System.out.print("k");
+			case 6: System.out.print("K");
 				break;
 			default:
 				break;
@@ -429,11 +332,11 @@ public class Board {
 		int rank = 8;
 		System.out.println("     A   B   C   D   E   F   G   H");
 		System.out.println("   +---+---+---+---+---+---+---+---+");
-		for(int[] i : printArray) {
+		for(int i = 56; i >= 0; i -= 8) {
 			System.out.print(" " + rank + " |");
-			for(int j : i) {
+			for(int j = i; j < (i + 8); j++) {
 				System.out.print(" ");
-				printPiece(j);
+				printPiece(getPieceType(j));
 				System.out.print(" |");
 			}
 			System.out.print(" " + rank--);
