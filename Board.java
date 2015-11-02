@@ -1,3 +1,5 @@
+import java.util.ArrayList;
+
 public class Board {
 	public static final int EMPTY = 0;
 	public static final int WHITE_PAWN = 1;
@@ -440,4 +442,44 @@ public class Board {
 		System.out.println("     A   B   C   D   E   F   G   H");
 	}
 
+	public static ArrayList<Integer> get1BitIndexes(long x) {
+		long compare = 0x0000000000000001L;
+		int index = 0;
+		ArrayList<Integer> indexes = new ArrayList<Integer>();
+
+		while(x != 0) {
+			if((x & compare) == 1L) {
+				indexes.add(index);
+			}
+			x = x >>> 1;
+			index++;
+		}
+		
+		return indexes;
+	}
+
+	public static long get1BitMask(int p) {
+		long mask = 0x0000000000000001L;
+		if(p == 0) {
+			return mask;
+		} else {
+			return mask << p;
+		}
+	}
+
+	public int getPieceType(int square) {
+		long mask = get1BitMask(square);
+		long[] whiteBitboards = {WP, WR, WN, WB, WQ, WK};
+		long[] blackBitboards = {BP, BR, BN, BB, BQ, BK};
+
+		for(int i = 0; i < 6; i++ ) {
+			if((mask & whiteBitboards[i]) != 0) {
+				return i+1;
+			}
+			if((mask & blackBitboards[i]) != 0) {
+				return -(i+1);
+			}
+		}
+		return 0;
+	}
 }
