@@ -336,7 +336,7 @@ public class Board {
 			System.out.print(" " + rank + " |");
 			for(int j = i; j < (i + 8); j++) {
 				System.out.print(" ");
-				printPiece(getPieceType(j));
+				printPiece(getPieceType(get1BitMask(j)));
 				System.out.print(" |");
 			}
 			System.out.print(" " + rank--);
@@ -370,8 +370,9 @@ public class Board {
 		}
 	}
 
-	public int getPieceType(int square) {
-		long mask = get1BitMask(square);
+	public int getPieceType(long mask) {
+		// if square int, run it through get1BitMask method
+		// as argument.
 		long[] whiteBitboards = {WP, WR, WN, WB, WQ, WK};
 		long[] blackBitboards = {BP, BR, BN, BB, BQ, BK};
 
@@ -384,5 +385,66 @@ public class Board {
 			}
 		}
 		return 0;
+	}
+
+	private void modify(int type, long modifier) {
+		switch(type) {
+			case 1:
+				WP ^= modifier;
+				break;
+			case 2:
+				WR ^= modifier;
+				break;
+			case 3:
+				WN ^= modifier;
+				break;
+			case 4:
+				WB ^= modifier;
+				break;
+			case 5:
+				WQ ^= modifier;
+				break;
+			case 6:
+				WK ^= modifier;
+				break;
+			case -1:
+				BP ^= modifier;
+				break;
+			case -2:
+				BR ^= modifier;
+				break;
+			case -3:
+				BN ^= modifier;
+				break;
+			case -4:
+				BB ^= modifier;
+				break;
+			case -5:
+				BQ ^= modifier;
+				break;
+			case -6:
+				BK ^= modifier;
+				break;
+			case 0:
+				break;
+			default:
+				break;
+		}
+	}
+
+	public void pseudoMovePiece(int fromSquare, int toSquare) {
+		// assumes from, to are pseudovalid for piece type
+		long fromMask = get1BitMask(fromSquare);
+		long toMask = get1BitMask(toSquare);
+		int fromPieceType = getPieceType(fromMask);
+		int toPieceType = getPieceType(toMask);
+	
+		// XOR with from to mask to move bit	
+		modify(fromPieceType, fromMask);	
+		modify(fromPieceType, toMask);	
+
+		// if bit is on one of opponents bitboard
+		// it was captured. remove by XOR with to mask
+		modify(toPieceType, toMask);	
 	}
 }
