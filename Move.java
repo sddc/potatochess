@@ -148,27 +148,27 @@ public class Move {
 		}
 	}
 
-	public static long genDoublePawnPush(boolean side, long x, long allPieces) {
+	public static long genDoublePawnPush(boolean side, long pawnPositions, long allPieces) {
 		// side:
 		// white = true
 		// black = false
 		if(side) {
-			return ~allPieces & ((Board.maskRank3 & genPawnPush(side, x, allPieces)) << 8);
+			return ~allPieces & ((Board.maskRank3 & genPawnPush(side, pawnPositions, allPieces)) << 8);
 		} else {
-			return ~allPieces & ((Board.maskRank6 & genPawnPush(side, x, allPieces)) >>> 8);
+			return ~allPieces & ((Board.maskRank6 & genPawnPush(side, pawnPositions, allPieces)) >>> 8);
 		}
 	}
 
-	public static long genPawnAttack(boolean side, long x, long sidePieces) {
+	public static long genPawnAttack(boolean side, long pawnPositions, long sidePieces) {
 		// side:
 		// white = true
 		// black = false
 		if(side) {
-			return ~sidePieces & (((Board.clearHFile & x) << 9) |
-				((Board.clearAFile & x) << 7));
+			return ~sidePieces & (((Board.clearHFile & pawnPositions) << 9) |
+				((Board.clearAFile & pawnPositions) << 7));
 		} else {
-			return ~sidePieces & (((Board.clearAFile & x) >>> 9) |
-				((Board.clearHFile & x) >>> 7));
+			return ~sidePieces & (((Board.clearAFile & pawnPositions) >>> 9) |
+				((Board.clearHFile & pawnPositions) >>> 7));
 		}
 	}
 
