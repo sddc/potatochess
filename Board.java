@@ -29,6 +29,10 @@ public class Board {
 	 * 5 = black queenside rook moved?
 	 */
 	private boolean[] moved = {false, false, false, false, false, false};
+	
+	// en passant checks
+	private boolean lastMoveDoublePawnPush = false;
+	private int behindSquare;
 
 	/* Bitboard Board Representation
 	 * Square to bit mapping
@@ -47,18 +51,18 @@ public class Board {
 
 	private long[] bitboards = {
 		0L,
-		0x000000000000FF00L,
-		0x0000000000000081L,
-		0x0000000000000042L,
-		0x0000000000000024L,
-		0x0000000000000008L,
-		0x0000000000000010L,
-		0x00FF000000000000L,
-		0x8100000000000000L,
-		0x4200000000000000L,
-		0x2400000000000000L,
-		0x0800000000000000L,
-		0x1000000000000000L
+		0x000000000000FF00L, // white pawns
+		0x0000000000000081L, // white rooks
+		0x0000000000000042L, // white knights
+		0x0000000000000024L, // white bishops
+		0x0000000000000008L, // white queen
+		0x0000000000000010L, // white king
+		0x00FF000000000000L, // black pawns
+		0x8100000000000000L, // black rooks
+		0x4200000000000000L, // black knights
+		0x2400000000000000L, // black bishops
+		0x0800000000000000L, // black queen
+		0x1000000000000000L  // black king
 	};
 	
 	public static final long clearAFile = 0xFEFEFEFEFEFEFEFEL;
@@ -70,6 +74,10 @@ public class Board {
 	public static final long maskRank6 = 0x0000FF0000000000L;
 
 	private Deque<PreviousMove> previousMoves = new ArrayDeque<PreviousMove>();
+
+	public boolean[] getCastlingChecks() {
+		return moved.clone();
+	}
 
 	public long getWhitePieces() {
 		long result = 0L;
@@ -240,7 +248,7 @@ public class Board {
 		bitboards[type] ^= modifier;
 	}
 
-	public void move(int fromSquare, int toSquare) {
+	public void move(boolean side, int fromSquare, int toSquare) {
 		// assumes from, to are at least pseudovalid for piece types
 		long fromMask = get1BitMask(fromSquare);
 		long toMask = get1BitMask(toSquare);
@@ -258,7 +266,30 @@ public class Board {
 		}
 
 		// save move to undo
-		previousMoves.addFirst(new PreviousMove(fromSquare, toSquare, fromPieceType, toPieceType, moved));
+		previousMoves.addFirst(new PreviousMove(fromSquare, toSquare, fromPieceType, toPieceType, moved, lastMoveDoublePawnPush, behindSquare));
+
+		// en passant check
+		if((fromPieceType == WHITE_PAWN) || (fromPieceType == BLACK_PAWN)) {
+			if(
+
+			((fromSquare >= Board.A2 && fromSquare <= Board.H2) &&
+			 (toSquare >= Board.A4 && toSquare <= Board.H4)) ||
+			((fromSquare >= Board.A2 && fromSquare <= Board.H2) &&
+			 (toSquare >= Board.A4 && toSquare <= Board.H4))
+
+			) {
+				lastMoveDoublePawnPush = true;	
+				if(side == Board.WHITE) {
+					behindSquare = toSquare-8;
+				} else {
+					behindSquare = toSquare+8;
+				}
+			} else {
+				lastMoveDoublePawnPush = false;	
+			}
+		} else {
+			lastMoveDoublePawnPush = false;	
+		}
 
 		// castling checks
 		if((moved[0] == false) && (fromPieceType == WHITE_QUEEN) && (fromSquare == Board.D1)) {
@@ -303,6 +334,8 @@ public class Board {
 		}
 
 		moved = move.moved;
+		lastMoveDoublePawnPush = move.lastMoveDoublePawnPush;
+		behindSquare = move.behindSquare;
 	}
 
 	public boolean ksSquaresEmpty(boolean side, boolean squares) {
