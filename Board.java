@@ -1,4 +1,6 @@
 import java.util.ArrayList;
+import java.util.Deque;
+import java.util.ArrayDeque;
 
 public class Board {
 	public static final int EMPTY = 0;
@@ -16,14 +18,16 @@ public class Board {
 	public static final int BLACK_KING = -6;
 	public static final boolean WHITE = true;
 	public static final boolean BLACK = false;
-
-	// KS = Kingside, QS = Queenside
-	private boolean whiteKSRookNotMoved = true;
-	private boolean whiteQSRookNotMoved = true;
-	private boolean blackKSRookNotMoved = true;
-	private boolean blackQSRookNotMoved = true;
-	private boolean whiteQueenNotMoved = true;
-	private boolean blackQueenNotMoved = true;
+	
+	/* castling moved array checks
+	 * 0 = white queen moved?
+	 * 1 = black queen moved?
+	 * 2 = white kingside rook moved?
+	 * 3 = white queenside rook moved?
+	 * 4 = black kingside rook moved?
+	 * 5 = black queenside rook moved?
+	 */
+	private boolean[] moved = {false, false, false, false, false, false};
 
 	/* Bitboard Board Representation
 	 * Square to bit mapping
@@ -61,6 +65,8 @@ public class Board {
 
 	public static final long maskRank3 = 0x0000000000FF0000L;
 	public static final long maskRank6 = 0x0000FF0000000000L;
+
+	private Deque<PreviousMove> previousMoves = new ArrayDeque<PreviousMove>();
 
 	public long getWhitePieces() {
 		return WP | WR | WN | WB | WQ | WK; 
@@ -263,8 +269,8 @@ public class Board {
 		}
 	}
 
-	public void pseudoMovePiece(int fromSquare, int toSquare) {
-		// assumes from, to are pseudovalid for piece type
+	public void move(int fromSquare, int toSquare) {
+		// assumes from, to are at least pseudovalid for piece types
 		long fromMask = get1BitMask(fromSquare);
 		long toMask = get1BitMask(toSquare);
 		int fromPieceType = getPieceType(fromMask);
@@ -276,32 +282,56 @@ public class Board {
 
 		// if bit is on one of opponents bitboard
 		// it was captured. remove by XOR with to mask
-		modify(toPieceType, toMask);	
+		if(toPieceType != EMPTY) {
+			modify(toPieceType, toMask);	
+		}
+
+		// save move to undo
+		previousMoves.addFirst(new PreviousMove(fromSquare, toSquare, fromPieceType, toPieceType, moved));
 
 		// castling checks
-		if((whiteQueenNotMoved == true) && (fromPieceType == WHITE_QUEEN) && (fromSquare == Board.D1)) {
-			whiteQueenNotMoved = false;
+		if((moved[0] == false) && (fromPieceType == WHITE_QUEEN) && (fromSquare == Board.D1)) {
+			moved[0] = true;
 		}
 
-		if((blackQueenNotMoved == true) && (fromPieceType == BLACK_QUEEN) && (fromSquare == Board.D8)) {
-			blackQueenNotMoved = false;
+		if((moved[1] == false) && (fromPieceType == BLACK_QUEEN) && (fromSquare == Board.D8)) {
+			moved[1] = true;
 		}
 
-		if((whiteQSRookNotMoved == true) && (fromPieceType == WHITE_ROOK) && (fromSquare == Board.A1)) {
-			whiteQSRookNotMoved = false;
+		if((moved[2] == false) && (fromPieceType == WHITE_ROOK) && (fromSquare == Board.H1)) {
+			moved[2] = true;
 		}
 
-		if((whiteKSRookNotMoved == true) && (fromPieceType == WHITE_ROOK) && (fromSquare == Board.H1)) {
-			whiteKSRookNotMoved = false;
+		if((moved[3] == false) && (fromPieceType == WHITE_ROOK) && (fromSquare == Board.A1)) {
+			moved[3] = true;
 		}
 
-		if((blackQSRookNotMoved == true) && (fromPieceType == BLACK_ROOK) && (fromSquare == Board.A8)) {
-			blackQSRookNotMoved = false;
+		if((moved[4] == false) && (fromPieceType == BLACK_ROOK) && (fromSquare == Board.H8)) {
+			moved[4] = true;
 		}
 
-		if((blackKSRookNotMoved == true) && (fromPieceType == BLACK_ROOK) && (fromSquare == Board.H8)) {
-			blackKSRookNotMoved = false;
+		if((moved[5] == false) && (fromPieceType == BLACK_ROOK) && (fromSquare == Board.A8)) {
+			moved[5] = true;
 		}
+
+	}
+
+	public void undoMove() {
+		if(previousMoves.size() == 0) {
+			return;
+		}
+
+		PreviousMove move = previousMoves.removeFirst();
+		long fromMask = get1BitMask(move.fromSquare);
+		long toMask = get1BitMask(move.toSquare);
+		modify(move.fromPieceType, toMask);
+		modify(move.fromPieceType, fromMask);
+
+		if(move.toPieceType != EMPTY) {
+			modify(move.toPieceType, toMask);
+		}
+
+		moved = move.moved;
 	}
 
 	public boolean ksSquaresEmpty(boolean side, boolean squares) {
