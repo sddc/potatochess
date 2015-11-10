@@ -79,79 +79,75 @@ public class Board {
 		return moved.clone();
 	}
 
-	public long getWhitePieces() {
+	public long getSidePieces(boolean side) {
 		long result = 0L;
 
-		for(int i = 1; i <= 6; i++) {
-			result |= bitboards[i];
+		if(side == Board.WHITE) {
+			for(int i = 1; i <= 6; i++) {
+				result |= bitboards[i];
+			}
+		} else {
+			for(int i = 7; i <= 12; i++) {
+				result |= bitboards[i];
+			}
 		}
 		return result;
-	}
-
-	public long getBlackPieces() {
-		long result = 0L;
-
-		for(int i = 7; i <= 12; i++) {
-			result |= bitboards[i];
-		}
-		return result;
-
 	}
 
 	public long getAllPieces() {
-		return getWhitePieces() | getBlackPieces();
+		return getSidePieces(Board.WHITE) | getSidePieces(Board.BLACK);
 	}
 
 	public long getEmptySquares() {
 		return ~getAllPieces();
 	}
 
-	public long getWhitePawns() {
-		return bitboards[1];
+	public long getPawns(boolean side) {
+		if(side == Board.WHITE) {
+			return bitboards[1];
+		} else {
+			return bitboards[7];
+		}
 	}
 
-	public long getWhiteRooks() {
-		return bitboards[2];
+	public long getRooks(boolean side) {
+		if(side == Board.WHITE) {
+			return bitboards[2];
+		} else {
+			return bitboards[8];
+		}
 	}
 
-	public long getWhiteKnights() {
-		return bitboards[3];
+	public long getKnights(boolean side) {
+		if(side == Board.WHITE) {
+			return bitboards[3];
+		} else {
+			return bitboards[9];
+		}
 	}
 
-	public long getWhiteBishops() {
-		return bitboards[4];
+	public long getBishops(boolean side) {
+		if(side == Board.WHITE) {
+			return bitboards[4];
+		} else {
+			return bitboards[10];
+		}
 	}
 
-	public long getWhiteQueen() {
-		return bitboards[5];
+	public long getQueen(boolean side) {
+		if(side == Board.WHITE) {
+			return bitboards[5];
+		} else {
+			return bitboards[11];
+		}
 	}
 
-	public long getWhiteKing() {
-		return bitboards[6];
-	}
-
-	public long getBlackPawns() {
-		return bitboards[7];
-	}
-
-	public long getBlackRooks() {
-		return bitboards[8];
-	}
-
-	public long getBlackKnights() {
-		return bitboards[9];
-	}
-
-	public long getBlackBishops() {
-		return bitboards[10];
-	}
-
-	public long getBlackQueen() {
-		return bitboards[11];
-	}
-
-	public long getBlackKing() {
-		return bitboards[12];
+	public long getKing(boolean side) {
+		if(side == Board.WHITE) {
+			return bitboards[6];
+		} else {
+			return bitboards[12];
+		}
 	}
 	
 	private void printPiece(int p) {
@@ -341,16 +337,14 @@ public class Board {
 	public boolean ksSquaresEmpty(boolean side, boolean squares) {
 		// side: true = white, false = black
 		// squares: true = kingside, false = queenside
-		long result;
+		long result = getSidePieces(side);
 		if(side) {
-			result = getWhitePieces();
 			if(squares) {
 				result &= (get1BitMask(Board.F1) | get1BitMask(Board.G1));
 			} else {
 				result &= (get1BitMask(Board.B1) | get1BitMask(Board.C1) | get1BitMask(Board.D1));
 			}
 		} else {
-			result = getBlackPieces();
 			if(squares) {
 				result &= (get1BitMask(Board.F8) | get1BitMask(Board.G8));
 			} else {
