@@ -10,12 +10,13 @@ public class Board {
 	public static final int WHITE_BISHOP = 4;
 	public static final int WHITE_QUEEN = 5;
 	public static final int WHITE_KING = 6;
-	public static final int BLACK_PAWN = -1;
-	public static final int BLACK_ROOK = -2;
-	public static final int BLACK_KNIGHT = -3;
-	public static final int BLACK_BISHOP = -4;
-	public static final int BLACK_QUEEN = -5;
-	public static final int BLACK_KING = -6;
+	public static final int BLACK_PAWN = 7;
+	public static final int BLACK_ROOK = 8;
+	public static final int BLACK_KNIGHT = 9;
+	public static final int BLACK_BISHOP = 10;
+	public static final int BLACK_QUEEN = 11;
+	public static final int BLACK_KING = 12;
+
 	public static final boolean WHITE = true;
 	public static final boolean BLACK = false;
 	
@@ -44,19 +45,21 @@ public class Board {
 		A2=8, B2=9, C2=10, D2=11, E2=12, F2=13, G2=14, H2=15, 
 		A1=0, B1=1, C1=2, D1=3, E1=4, F1=5, G1=6, H1=7;
 
-
-	private long WP = 0x000000000000FF00L;
-	private long WR = 0x0000000000000081L;
-	private long WN = 0x0000000000000042L;
-	private long WB = 0x0000000000000024L;
-	private long WQ = 0x0000000000000008L;
-	private long WK = 0x0000000000000010L;
-	private long BP = 0x00FF000000000000L;
-	private long BR = 0x8100000000000000L;
-	private long BN = 0x4200000000000000L;
-	private long BB = 0x2400000000000000L;
-	private long BQ = 0x0800000000000000L;
-	private long BK = 0x1000000000000000L;
+	private long[] bitboards = {
+		0L,
+		0x000000000000FF00L,
+		0x0000000000000081L,
+		0x0000000000000042L,
+		0x0000000000000024L,
+		0x0000000000000008L,
+		0x0000000000000010L,
+		0x00FF000000000000L,
+		0x8100000000000000L,
+		0x4200000000000000L,
+		0x2400000000000000L,
+		0x0800000000000000L,
+		0x1000000000000000L
+	};
 	
 	public static final long clearAFile = 0xFEFEFEFEFEFEFEFEL;
 	public static final long clearBFile = 0xFDFDFDFDFDFDFDFDL;
@@ -69,11 +72,22 @@ public class Board {
 	private Deque<PreviousMove> previousMoves = new ArrayDeque<PreviousMove>();
 
 	public long getWhitePieces() {
-		return WP | WR | WN | WB | WQ | WK; 
+		long result = 0L;
+
+		for(int i = 1; i <= 6; i++) {
+			result |= bitboards[i];
+		}
+		return result;
 	}
 
 	public long getBlackPieces() {
-		return BP | BR | BN | BB | BQ | BK; 
+		long result = 0L;
+
+		for(int i = 7; i <= 12; i++) {
+			result |= bitboards[i];
+		}
+		return result;
+
 	}
 
 	public long getAllPieces() {
@@ -85,67 +99,55 @@ public class Board {
 	}
 
 	public long getWhitePawns() {
-		return WP;
+		return bitboards[1];
 	}
 
 	public long getWhiteRooks() {
-		return WR;
+		return bitboards[2];
 	}
 
 	public long getWhiteKnights() {
-		return WN;
+		return bitboards[3];
 	}
 
 	public long getWhiteBishops() {
-		return WB;
+		return bitboards[4];
 	}
 
 	public long getWhiteQueen() {
-		return WQ;
+		return bitboards[5];
 	}
 
 	public long getWhiteKing() {
-		return WK;
+		return bitboards[6];
 	}
 
 	public long getBlackPawns() {
-		return BP;
+		return bitboards[7];
 	}
 
 	public long getBlackRooks() {
-		return BR;
+		return bitboards[8];
 	}
 
 	public long getBlackKnights() {
-		return BN;
+		return bitboards[9];
 	}
 
 	public long getBlackBishops() {
-		return BB;
+		return bitboards[10];
 	}
 
 	public long getBlackQueen() {
-		return BQ;
+		return bitboards[11];
 	}
 
 	public long getBlackKing() {
-		return BK;
+		return bitboards[12];
 	}
 	
 	private void printPiece(int p) {
 		switch(p) {
-			case -6: System.out.print("k");
-				 break;
-			case -5: System.out.print("q");
-				 break;
-			case -4: System.out.print("b");
-				 break;
-			case -3: System.out.print("n");
-				 break;
-			case -2: System.out.print("r");
-				 break;
-			case -1: System.out.print("p");
-				 break;
 			case 0: System.out.print(" ");
 				break;
 			case 1: System.out.print("P");
@@ -160,6 +162,18 @@ public class Board {
 				break;
 			case 6: System.out.print("K");
 				break;
+			case 7: System.out.print("p");
+				 break;
+			case 8: System.out.print("r");
+				 break;
+			case 9: System.out.print("n");
+				 break;
+			case 10: System.out.print("b");
+				 break;
+			case 11: System.out.print("q");
+				 break;
+			case 12: System.out.print("k");
+				 break;
 			default:
 				break;
 		}
@@ -210,63 +224,20 @@ public class Board {
 	public int getPieceType(long mask) {
 		// if square int, run it through get1BitMask method
 		// as argument.
-		long[] whiteBitboards = {WP, WR, WN, WB, WQ, WK};
-		long[] blackBitboards = {BP, BR, BN, BB, BQ, BK};
 
-		for(int i = 0; i < 6; i++ ) {
-			if((mask & whiteBitboards[i]) != 0) {
-				return i+1;
-			}
-			if((mask & blackBitboards[i]) != 0) {
-				return -(i+1);
+		for(int i = 0; i < 13; i++ ) {
+			if((mask & bitboards[i]) != 0) {
+				return i;
 			}
 		}
 		return 0;
 	}
 
 	private void modify(int type, long modifier) {
-		switch(type) {
-			case 1:
-				WP ^= modifier;
-				break;
-			case 2:
-				WR ^= modifier;
-				break;
-			case 3:
-				WN ^= modifier;
-				break;
-			case 4:
-				WB ^= modifier;
-				break;
-			case 5:
-				WQ ^= modifier;
-				break;
-			case 6:
-				WK ^= modifier;
-				break;
-			case -1:
-				BP ^= modifier;
-				break;
-			case -2:
-				BR ^= modifier;
-				break;
-			case -3:
-				BN ^= modifier;
-				break;
-			case -4:
-				BB ^= modifier;
-				break;
-			case -5:
-				BQ ^= modifier;
-				break;
-			case -6:
-				BK ^= modifier;
-				break;
-			case 0:
-				break;
-			default:
-				break;
+		if(type == 0) {
+			return;
 		}
+		bitboards[type] ^= modifier;
 	}
 
 	public void move(int fromSquare, int toSquare) {
