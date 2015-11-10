@@ -13,6 +13,14 @@ public class Move {
 	public static final long[] knightMoves = genKnightMoves();
 	public static final long[] kingMoves = genKingMoves();
 
+	public int fromSquare;
+	public int toSquare;
+
+	public Move(int fromSquare, int toSquare) {
+		this.fromSquare = fromSquare;
+		this.toSquare = toSquare;
+	}
+
 	public static int firstOneBit(long x) {
 		// =64 when x is 0
 		return Long.numberOfTrailingZeros(x);
