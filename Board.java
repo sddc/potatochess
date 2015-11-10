@@ -14,6 +14,16 @@ public class Board {
 	public static final int BLACK_BISHOP = -4;
 	public static final int BLACK_QUEEN = -5;
 	public static final int BLACK_KING = -6;
+	public static final boolean WHITE = true;
+	public static final boolean BLACK = false;
+
+	// KS = Kingside, QS = Queenside
+	private boolean whiteKSRookNotMoved = true;
+	private boolean whiteQSRookNotMoved = true;
+	private boolean blackKSRookNotMoved = true;
+	private boolean blackQSRookNotMoved = true;
+	private boolean whiteQueenNotMoved = true;
+	private boolean blackQueenNotMoved = true;
 
 	public static final int
 		A8=56, B8=57, C8=58, D8=59, E8=60, F8=61, G8=62, H8=63, 
@@ -446,5 +456,58 @@ public class Board {
 		// if bit is on one of opponents bitboard
 		// it was captured. remove by XOR with to mask
 		modify(toPieceType, toMask);	
+
+		// castling checks
+		if((whiteQueenNotMoved == true) && (fromPieceType == WHITE_QUEEN) && (fromSquare == Board.D1)) {
+			whiteQueenNotMoved = false;
+		}
+
+		if((blackQueenNotMoved == true) && (fromPieceType == BLACK_QUEEN) && (fromSquare == Board.D8)) {
+			blackQueenNotMoved = false;
+		}
+
+		if((whiteQSRookNotMoved == true) && (fromPieceType == WHITE_ROOK) && (fromSquare == Board.A1)) {
+			whiteQSRookNotMoved = false;
+		}
+
+		if((whiteKSRookNotMoved == true) && (fromPieceType == WHITE_ROOK) && (fromSquare == Board.H1)) {
+			whiteKSRookNotMoved = false;
+		}
+
+		if((blackQSRookNotMoved == true) && (fromPieceType == BLACK_ROOK) && (fromSquare == Board.A8)) {
+			blackQSRookNotMoved = false;
+		}
+
+		if((blackKSRookNotMoved == true) && (fromPieceType == BLACK_ROOK) && (fromSquare == Board.H8)) {
+			blackKSRookNotMoved = false;
+		}
 	}
+
+	public boolean ksSquaresEmpty(boolean side, boolean squares) {
+		// side: true = white, false = black
+		// squares: true = kingside, false = queenside
+		long result;
+		if(side) {
+			result = getWhitePieces();
+			if(squares) {
+				result &= (get1BitMask(Board.F1) | get1BitMask(Board.G1));
+			} else {
+				result &= (get1BitMask(Board.B1) | get1BitMask(Board.C1) | get1BitMask(Board.D1));
+			}
+		} else {
+			result = getBlackPieces();
+			if(squares) {
+				result &= (get1BitMask(Board.F8) | get1BitMask(Board.G8));
+			} else {
+				result &= (get1BitMask(Board.B8) | get1BitMask(Board.C8) | get1BitMask(Board.D8));
+			}
+		}
+
+		if(result != 0L) {
+			return false;
+		} else {
+			return true;
+		}
+	}
+
 }
