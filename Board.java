@@ -286,7 +286,7 @@ public class Board {
 		// save move to undo
 		previousMoves.addFirst(new PreviousMove(fromSquare, toSquare, fromPieceType, toPieceType, moved, lastMoveDoublePawnPush, behindSquare));
 
-		// en passant check
+		// en passant check and pawn promotion
 		if((fromPieceType == WHITE_PAWN) || (fromPieceType == BLACK_PAWN)) {
 			if(
 
@@ -304,6 +304,18 @@ public class Board {
 				}
 			} else {
 				lastMoveDoublePawnPush = false;	
+				// auto promote to queen
+				if(side == Board.WHITE) {
+					if(toSquare >= Board.A8 && toSquare <= Board.H8) {
+						modify(WHITE_PAWN, toMask);
+						modify(WHITE_QUEEN, toMask);
+					}
+				} else {
+					if(toSquare >= Board.A1 && toSquare <= Board.H1) {
+						modify(BLACK_PAWN, toMask);
+						modify(BLACK_QUEEN, toMask);
+					}
+				}
 			}
 		} else {
 			lastMoveDoublePawnPush = false;	
@@ -365,6 +377,21 @@ public class Board {
 		long toMask = get1BitMask(move.toSquare);
 		modify(move.fromPieceType, toMask);
 		modify(move.fromPieceType, fromMask);
+
+		// unpromote queen to pawn
+		if((move.fromPieceType == WHITE_PAWN) || (move.fromPieceType == BLACK_PAWN)) {
+			if(side == Board.WHITE) {
+				if(move.toSquare >= Board.A8 && move.toSquare <= Board.H8) {
+					modify(WHITE_PAWN, toMask);
+					modify(WHITE_QUEEN, toMask);
+				}
+			} else {
+				if(move.toSquare >= Board.A1 && move.toSquare <= Board.H1) {
+					modify(BLACK_PAWN, toMask);
+					modify(BLACK_QUEEN, toMask);
+				}
+			}
+		}
 	
 		//restore en passant capture opportunity	
 		if(
