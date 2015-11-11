@@ -426,7 +426,7 @@ public class Board {
 	public boolean castlingAvailable(boolean side, boolean squares, long attacks) {
 		// side: true = white, false = black
 		// squares: true = kingside, false = queenside
-		long result = getSidePieces(side);
+		long mask;
 		if(side == Board.WHITE) {
 			// check if king moved
 			if(moved[0]) {
@@ -438,13 +438,13 @@ public class Board {
 				if(moved[2]) {
 					return false;
 				}
-				result &= (get1BitMask(Board.F1) | get1BitMask(Board.G1));
+				mask = (get1BitMask(Board.F1) | get1BitMask(Board.G1));
 			} else {
 				// check if queenside rook moved
 				if(moved[3]) {
 					return false;
 				}
-				result &= (get1BitMask(Board.B1) | get1BitMask(Board.C1) | get1BitMask(Board.D1));
+				mask = (get1BitMask(Board.B1) | get1BitMask(Board.C1) | get1BitMask(Board.D1));
 			}
 		} else {
 			// check if king moved
@@ -457,23 +457,21 @@ public class Board {
 				if(moved[4]) {
 					return false;
 				}
-				result &= (get1BitMask(Board.F8) | get1BitMask(Board.G8));
+				mask = (get1BitMask(Board.F8) | get1BitMask(Board.G8));
 			} else {
 				// check if queenside rook moved
 				if(moved[5]) {
 					return false;
 				}
-				result &= (get1BitMask(Board.B8) | get1BitMask(Board.C8) | get1BitMask(Board.D8));
+				mask = (get1BitMask(Board.B8) | get1BitMask(Board.C8) | get1BitMask(Board.D8));
 			}
 		}
 
-		// check if squares attacked
-		result &= attacks;
-
-		if(result != 0L) {
-			return false;
-		} else {
+		// check if own pieces between king and rook. also check if opponent attacking those squares
+		if(((mask & getSidePieces(side)) == 0L) && ((mask & attacks) == 0L)) {
 			return true;
+		} else {
+			return false;
 		}
 	}
 }
