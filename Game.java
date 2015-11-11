@@ -133,7 +133,7 @@ public class Game {
 				validateAndAdd(side, i, k);
 			}
 		}
-		castling();
+		castling(side);
 
 		return moves;
 	}
