@@ -23,8 +23,8 @@ public class Board {
 	public static final boolean QUEENSIDE = false;
 	
 	/* castling moved array checks
-	 * 0 = white queen moved?
-	 * 1 = black queen moved?
+	 * 0 = white king moved?
+	 * 1 = black king moved?
 	 * 2 = white kingside rook moved?
 	 * 3 = white queenside rook moved?
 	 * 4 = black kingside rook moved?
@@ -310,11 +310,11 @@ public class Board {
 		}
 
 		// castling checks
-		if((moved[0] == false) && (fromPieceType == WHITE_QUEEN) && (fromSquare == Board.D1)) {
+		if((moved[0] == false) && (fromPieceType == WHITE_KING) && (fromSquare == Board.E1)) {
 			moved[0] = true;
 		}
 
-		if((moved[1] == false) && (fromPieceType == BLACK_QUEEN) && (fromSquare == Board.D8)) {
+		if((moved[1] == false) && (fromPieceType == BLACK_KING) && (fromSquare == Board.E8)) {
 			moved[1] = true;
 		}
 
@@ -401,7 +401,7 @@ public class Board {
 		// squares: true = kingside, false = queenside
 		long result = getSidePieces(side);
 		if(side == Board.WHITE) {
-			// check if queen moved
+			// check if king moved
 			if(moved[0]) {
 				return false;
 			}
@@ -420,7 +420,7 @@ public class Board {
 				result &= (get1BitMask(Board.B1) | get1BitMask(Board.C1) | get1BitMask(Board.D1));
 			}
 		} else {
-			// check if queen moved
+			// check if king moved
 			if(moved[1]) {
 				return false;
 			}
