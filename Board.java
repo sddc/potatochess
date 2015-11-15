@@ -66,6 +66,9 @@ public class Board {
 		0x0800000000000000L, // black queen
 		0x1000000000000000L  // black king
 	};
+
+	private long whitePieces = genSidePieces(Board.WHITE);
+	private long blackPieces = genSidePieces(Board.BLACK); 
 	
 	public static final long clearAFile = 0xFEFEFEFEFEFEFEFEL;
 	public static final long clearBFile = 0xFDFDFDFDFDFDFDFDL;
@@ -93,7 +96,7 @@ public class Board {
 		return lastMoveDoublePawnPush;
 	}
 
-	public long getSidePieces(boolean side) {
+	private long genSidePieces(boolean side) {
 		long result = 0L;
 
 		if(side == Board.WHITE) {
@@ -106,6 +109,14 @@ public class Board {
 			}
 		}
 		return result;
+	}
+
+	public long getSidePieces(boolean side) {
+		if(side == Board.WHITE) {
+			return whitePieces;
+		} else {
+			return blackPieces;
+		}
 	}
 
 	public long getAllPieces() {
@@ -255,7 +266,13 @@ public class Board {
 		if(type == 0) {
 			return;
 		}
-		bitboards[type] ^= modifier;
+		if(type <= 6) {
+			bitboards[type] ^= modifier;
+			whitePieces ^= modifier;
+		} else {
+			bitboards[type] ^= modifier;
+			blackPieces ^= modifier;
+		}
 	}
 
 	public void move(boolean side, int fromSquare, int toSquare) {
@@ -278,6 +295,7 @@ public class Board {
 			// XOR toPieceType's bitboard with toMask to toggle to 0
 			modify(toPieceType, toMask);	
 		}
+
 
 		// en passant check and capture
 		if((fromPieceType == WHITE_PAWN) || (fromPieceType == BLACK_PAWN)) {
@@ -306,7 +324,7 @@ public class Board {
 		} else {
 			lastMoveDoublePawnPush = false;	
 		}
-
+		
 		/*
 		// castling checks
 		if((moved[0] == false) && (fromPieceType == WHITE_KING) && (fromSquare == Board.E1)) {
