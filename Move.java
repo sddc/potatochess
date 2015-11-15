@@ -33,7 +33,7 @@ public class Move implements Comparable<Move> {
 	}
 
 	public String toString() {
-		return squareNames[toSquare] + squareNames[fromSquare];
+		return squareNames[fromSquare] + squareNames[toSquare];
 	}
 
 	public int compareTo(Move m) {

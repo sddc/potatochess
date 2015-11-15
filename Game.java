@@ -40,8 +40,38 @@ public class Game {
 						System.out.println("Active color: Black (lowercase)");
 					}
 					break;
+				case "move":
+					if(command.length == 2) {
+						if(command[1].length() == 4) {
+							boolean foundMove = false;
+
+							for(Move m : moves) {
+								if(m.toString().equals(command[1])) {
+									chessboard.move(activeColor, m.fromSquare, m.toSquare);
+									activeColor = !activeColor;
+									moves = genValidMoves(activeColor);
+									foundMove = true;
+									break;
+								}
+							}
+
+							if(!foundMove) {
+								System.out.println("'" + command[1] + "' is not a valid move.");
+							}
+							break;
+						} else {
+							System.out.println("'" + command[1] + "' is not a valid move.");
+							break;
+						}
+					} else {
+						System.out.println("move command missing square coordinates.");
+						break;
+					}
 				case "perft":
 					System.out.println(perft(activeColor, Integer.parseInt(command[1])));
+					break;
+				case "divide":
+					divide(activeColor, Integer.parseInt(command[1]), true);
 					break;
 				case "quit":
 				case "exit":
@@ -69,6 +99,38 @@ public class Game {
 			chessboard.move(side, m.fromSquare, m.toSquare);
 			Nodes += perft(!side, depth-1);
 			chessboard.undoMove(side);
+		}
+		return Nodes;
+	}
+	
+	public int divide(boolean side, int depth, boolean initial) {
+		if(depth == 0) {
+			return 1;
+		}	
+
+		int Nodes = 0;
+		ArrayList<String> results = null;
+		if(initial) {
+			results = new ArrayList<String>();
+		}
+
+		ArrayList<Move> moves = genValidMoves(side);
+		for(Move m : moves) {
+			chessboard.move(side, m.fromSquare, m.toSquare);
+			Nodes += perft(!side, depth-1);
+			chessboard.undoMove(side);
+
+			if(initial) {
+				results.add(new String(m.toString() + " " + Nodes));
+				Nodes = 0;
+			}
+		}
+
+		if(initial) {
+			Collections.sort(results);
+			for(String r : results) {
+				System.out.println(r);
+			}
 		}
 		return Nodes;
 	}
