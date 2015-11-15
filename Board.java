@@ -72,8 +72,12 @@ public class Board {
 	public static final long clearGFile = 0xBFBFBFBFBFBFBFBFL;
 	public static final long clearHFile = 0x7F7F7F7F7F7F7F7FL;
 
+	public static final long maskRank2 = 0x000000000000FF00L;
 	public static final long maskRank3 = 0x0000000000FF0000L;
+	public static final long maskRank4 = 0x00000000FF000000L;
+	public static final long maskRank5 = 0x000000FF00000000L;
 	public static final long maskRank6 = 0x0000FF0000000000L;
+	public static final long maskRank7 = 0x00FF000000000000L;
 
 	private Deque<PreviousMove> previousMoves = new ArrayDeque<PreviousMove>();
 
@@ -255,72 +259,55 @@ public class Board {
 	}
 
 	public void move(boolean side, int fromSquare, int toSquare) {
-		// assumes from, to are at least pseudovalid for piece types
+		// assumes fromSquare, toSquare are at least pseudovalid for piece types
 		long fromMask = get1BitMask(fromSquare);
 		long toMask = get1BitMask(toSquare);
 		int fromPieceType = getPieceType(fromMask);
 		int toPieceType = getPieceType(toMask);
 
-		// en passant capture
-		if(
-		(lastMoveDoublePawnPush == true) && 
-		((fromPieceType == WHITE_PAWN) || (fromPieceType == BLACK_PAWN)) &&
-		(toSquare == behindSquare)) {
-			if(side == Board.WHITE) {
-				modify(BLACK_PAWN, get1BitMask(toSquare+8));
-			} else {
-				modify(WHITE_PAWN, get1BitMask(toSquare-8));
-			}	
-		}
-
-		// XOR with from to mask to move bit	
-		modify(fromPieceType, fromMask);	
-		modify(fromPieceType, toMask);	
-
-		// if bit is on one of opponents bitboard
-		// it was captured. remove by XOR with to mask
-		if(toPieceType != EMPTY) {
-			modify(toPieceType, toMask);	
-		}
-
 		// save move to undo
 		previousMoves.addFirst(new PreviousMove(fromSquare, toSquare, fromPieceType, toPieceType, moved, lastMoveDoublePawnPush, behindSquare));
 
-		// en passant check and pawn promotion
+		// XOR fromPieceType's bitboard with fromMask to toggle to 0
+		modify(fromPieceType, fromMask);	
+		// XOR fromPieceType's bitboard with toMask to toggle to 1
+		modify(fromPieceType, toMask);	
+
+		// if toPieceType is not empty, it is a capture
+		if(toPieceType != EMPTY) {
+			// XOR toPieceType's bitboard with toMask to toggle to 0
+			modify(toPieceType, toMask);	
+		}
+
+		// en passant check and capture
 		if((fromPieceType == WHITE_PAWN) || (fromPieceType == BLACK_PAWN)) {
-			if(
-
-			((fromSquare >= Board.A2 && fromSquare <= Board.H2) &&
-			 (toSquare >= Board.A4 && toSquare <= Board.H4)) ||
-			((fromSquare >= Board.A2 && fromSquare <= Board.H2) &&
-			 (toSquare >= Board.A4 && toSquare <= Board.H4))
-
-			) {
-				lastMoveDoublePawnPush = true;	
+			if((lastMoveDoublePawnPush == true) && (toSquare == behindSquare)) {
+				// capture
 				if(side == Board.WHITE) {
-					behindSquare = toSquare-8;
+					modify(BLACK_PAWN, get1BitMask(toSquare-8));
 				} else {
-					behindSquare = toSquare+8;
-				}
-			} else {
+					modify(WHITE_PAWN, get1BitMask(toSquare+8));
+				}	
 				lastMoveDoublePawnPush = false;	
-				// auto promote to queen
-				if(side == Board.WHITE) {
-					if(toSquare >= Board.A8 && toSquare <= Board.H8) {
-						modify(WHITE_PAWN, toMask);
-						modify(WHITE_QUEEN, toMask);
+			} else {
+				// check for double pawn push
+				if( ((fromMask & maskRank2) != 0L && (toMask & maskRank4) != 0L) ||
+				((fromMask & maskRank7) != 0L && (toMask & maskRank5) != 0L) ) {
+					lastMoveDoublePawnPush = true;	
+					if(side == Board.WHITE) {
+						behindSquare = toSquare-8;
+					} else {
+						behindSquare = toSquare+8;
 					}
 				} else {
-					if(toSquare >= Board.A1 && toSquare <= Board.H1) {
-						modify(BLACK_PAWN, toMask);
-						modify(BLACK_QUEEN, toMask);
-					}
+					lastMoveDoublePawnPush = false;	
 				}
 			}
 		} else {
 			lastMoveDoublePawnPush = false;	
 		}
 
+		/*
 		// castling checks
 		if((moved[0] == false) && (fromPieceType == WHITE_KING) && (fromSquare == Board.E1)) {
 			moved[0] = true;
@@ -365,18 +352,44 @@ public class Board {
 				move(side, Board.A8, Board.D8);
 			}
 		}
+		*/
 	}
 
 	public void undoMove(boolean side) {
-		if(previousMoves.size() == 0) {
+		if(previousMoves.isEmpty()) {
 			return;
 		}
 
 		PreviousMove move = previousMoves.removeFirst();
 		long fromMask = get1BitMask(move.fromSquare);
 		long toMask = get1BitMask(move.toSquare);
-		modify(move.fromPieceType, toMask);
+
+		// restore checks
+		moved = move.moved;
+		lastMoveDoublePawnPush = move.lastMoveDoublePawnPush;
+		behindSquare = move.behindSquare;
+
+		// undo move
 		modify(move.fromPieceType, fromMask);
+		modify(move.fromPieceType, toMask);
+
+		// undo capture
+		if(move.toPieceType != EMPTY) {
+			modify(move.toPieceType, toMask);
+		}
+		
+		if((move.fromPieceType == WHITE_PAWN) || (move.fromPieceType == BLACK_PAWN)) {
+			// undo en passant capture
+			if((move.lastMoveDoublePawnPush == true) && (move.toSquare == move.behindSquare)) {
+				if(side == Board.WHITE) {
+					modify(BLACK_PAWN, get1BitMask(move.toSquare-8));
+				} else {
+					modify(WHITE_PAWN, get1BitMask(move.toSquare+8));
+				}	
+			}
+		}
+
+		/*
 
 		// unpromote queen to pawn
 		if((move.fromPieceType == WHITE_PAWN) || (move.fromPieceType == BLACK_PAWN)) {
@@ -392,27 +405,6 @@ public class Board {
 				}
 			}
 		}
-	
-		//restore en passant capture opportunity	
-		if(
-		(move.lastMoveDoublePawnPush == true) && 
-		((move.fromPieceType == WHITE_PAWN) || (move.fromPieceType == BLACK_PAWN)) &&
-		(move.toSquare == move.behindSquare)) {
-			if(side == Board.WHITE) {
-				modify(BLACK_PAWN, get1BitMask(move.toSquare+8));
-			} else {
-				modify(WHITE_PAWN, get1BitMask(move.toSquare-8));
-			}	
-		}
-
-		// undo opponent capture
-		if(move.toPieceType != EMPTY) {
-			modify(move.toPieceType, toMask);
-		}
-
-		moved = move.moved;
-		lastMoveDoublePawnPush = move.lastMoveDoublePawnPush;
-		behindSquare = move.behindSquare;
 
 		// if rook move was involved in castling, undo the king move
 		if( ((move.fromPieceType == WHITE_ROOK) && (move.fromSquare == Board.H1) && (move.toSquare == Board.F1)) ||
@@ -421,6 +413,7 @@ public class Board {
 		    ((move.fromPieceType == BLACK_ROOK) && (move.fromSquare == Board.A8) && (move.toSquare == Board.D8)) ) {
 			undoMove(side);
 		    }
+		    */
 	}
 
 	public boolean castlingAvailable(boolean side, boolean squares, long attacks) {
