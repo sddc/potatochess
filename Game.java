@@ -1,15 +1,51 @@
 import java.util.ArrayList;
+import java.util.Scanner;
 
 public class Game {
 	private Board chessboard;
-	private boolean activePlayer;
+	private boolean activeColor;
 	private ArrayList<Move> moves;
 	private boolean whiteKingInCheck = false;
 	private boolean blackKingInCheck = false;
 
 	public Game() {
 		chessboard = new Board();
-		activePlayer = Board.WHITE;
+		activeColor = Board.WHITE;
+		moves = genValidMoves(activeColor);
+		start();
+	}
+
+	public void start() {
+		Scanner input = new Scanner(System.in);
+		String[] command;
+		
+		System.out.print("> ");
+		while(input.hasNextLine()) {
+			command = input.nextLine().split(" ");
+
+			switch(command[0]) {
+				case "moves":
+					break;
+				case "print":
+					chessboard.print();
+					if(activeColor == Board.WHITE) {
+						System.out.println("Active color: White (uppercase)");
+					} else {
+						System.out.println("Active color: Black (lowercase)");
+					}
+					break;
+				case "quit":
+				case "exit":
+					return;
+				default:
+					if(command[0].length() == 0) {
+					} else {
+						System.out.println("'" + command[0] + "' is not a valid command.");
+					}
+					break;
+			}
+			System.out.print("> ");
+		}
 	}
 
 	private long genAttackSquares(boolean side) {
@@ -58,7 +94,7 @@ public class Game {
 		int rook;
 		int bishop;
 		int queen;
-		moves = new ArrayList<Move>();
+		ArrayList<Move> moves = new ArrayList<Move>();
 		Move m;
 
 		if(side == Board.WHITE) {
@@ -81,56 +117,56 @@ public class Game {
 		for(int i : Board.get1BitIndexes(chessboard.getPawns(side))) {
 			j = pawnAttack & Move.genPawnAttack(side, i, chessboard.getSidePieces(side));
 			for(int k : Board.get1BitIndexes(j)) {
-				validateAndAdd(side, i, k);
+				validateAndAdd(side, i, k, moves);
 			}
 		}
 
 		for(int i : Board.get1BitIndexes(chessboard.getPawns(side))) {
 			j = Move.genPawnPush(side, i, chessboard.getAllPieces());
 			for(int k : Board.get1BitIndexes(j)) {
-				validateAndAdd(side, i, k);
+				validateAndAdd(side, i, k, moves);
 			}
 		}
 
 		for(int i : Board.get1BitIndexes(chessboard.getPawns(side))) {
 			j = Move.genDoublePawnPush(side, i, chessboard.getAllPieces());
 			for(int k : Board.get1BitIndexes(j)) {
-				validateAndAdd(side, i, k);
+				validateAndAdd(side, i, k, moves);
 			}
 		}
 
 		for(int i : Board.get1BitIndexes(chessboard.getRooks(side))) {
 			j = Move.genSlidingPieceMoves(rook, i, chessboard.getAllPieces(), chessboard.getSidePieces(side));
 			for(int k : Board.get1BitIndexes(j)) {
-				validateAndAdd(side, i, k);
+				validateAndAdd(side, i, k, moves);
 			}
 		}
 
 		for(int i : Board.get1BitIndexes(chessboard.getBishops(side))) {
 			j = Move.genSlidingPieceMoves(bishop, i, chessboard.getAllPieces(), chessboard.getSidePieces(side));
 			for(int k : Board.get1BitIndexes(j)) {
-				validateAndAdd(side, i, k);
+				validateAndAdd(side, i, k, moves);
 			}
 		}
 
 		for(int i : Board.get1BitIndexes(chessboard.getQueen(side))) {
 			j = Move.genSlidingPieceMoves(queen, i, chessboard.getAllPieces(), chessboard.getSidePieces(side));
 			for(int k : Board.get1BitIndexes(j)) {
-				validateAndAdd(side, i, k);
+				validateAndAdd(side, i, k, moves);
 			}
 		}
 
 		for(int i : Board.get1BitIndexes(chessboard.getKnights(side))) {
 			j = Move.knightMoves[i] & ~chessboard.getSidePieces(side);
 			for(int k : Board.get1BitIndexes(j)) {
-				validateAndAdd(side, i, k);
+				validateAndAdd(side, i, k, moves);
 			}
 		}
 
 		for(int i : Board.get1BitIndexes(chessboard.getKing(side))) {
 			j = Move.kingMoves[i] & ~chessboard.getSidePieces(side);
 			for(int k : Board.get1BitIndexes(j)) {
-				validateAndAdd(side, i, k);
+				validateAndAdd(side, i, k, moves);
 			}
 		}
 		castling(side);
@@ -152,9 +188,9 @@ public class Game {
 			// make the move. rook moves implicitly. validateAndAdd
 			// will check if king is attacked after move
 			if(side == Board.WHITE) {
-				validateAndAdd(side, Board.E1, Board.G1);
+				validateAndAdd(side, Board.E1, Board.G1, moves);
 			} else {
-				validateAndAdd(side, Board.E8, Board.G8);
+				validateAndAdd(side, Board.E8, Board.G8, moves);
 			}
 		}
 
@@ -163,15 +199,15 @@ public class Game {
 			// make the move. rook moves implicitly. validateAndAdd
 			// will check if king is attacked after move
 			if(side == Board.WHITE) {
-				validateAndAdd(side, Board.E1, Board.C1);
+				validateAndAdd(side, Board.E1, Board.C1, moves);
 			} else {
-				validateAndAdd(side, Board.E8, Board.C8);
+				validateAndAdd(side, Board.E8, Board.C8, moves);
 			}
 		}
 	}
 
 
-	private void validateAndAdd(boolean side, int fromSquare, int toSquare) {
+	private void validateAndAdd(boolean side, int fromSquare, int toSquare, ArrayList<Move> moves) {
 		chessboard.move(side, fromSquare, toSquare);
 		if((genAttackSquares(!side) & chessboard.getKing(side)) == 0L) {
 			moves.add(new Move(fromSquare, toSquare));
