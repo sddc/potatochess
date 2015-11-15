@@ -40,6 +40,9 @@ public class Game {
 						System.out.println("Active color: Black (lowercase)");
 					}
 					break;
+				case "perft":
+					System.out.println(perft(activeColor, Integer.parseInt(command[1])));
+					break;
 				case "quit":
 				case "exit":
 					return;
@@ -52,6 +55,22 @@ public class Game {
 			}
 			System.out.print("> ");
 		}
+	}
+
+	public int perft(boolean side, int depth) {
+		if(depth == 0) {
+			return 1;
+		}	
+
+		int Nodes = 0;
+
+		ArrayList<Move> moves = genValidMoves(side);
+		for(Move m : moves) {
+			chessboard.move(side, m.fromSquare, m.toSquare);
+			Nodes += perft(!side, depth-1);
+			chessboard.undoMove(side);
+		}
+		return Nodes;
 	}
 
 	private long genAttackSquares(boolean side) {
@@ -121,21 +140,21 @@ public class Game {
 		}
 
 		for(int i : Board.get1BitIndexes(chessboard.getPawns(side))) {
-			j = pawnAttack & Move.genPawnAttack(side, i, chessboard.getSidePieces(side));
+			j = pawnAttack & Move.genPawnAttack(side, Board.get1BitMask(i), chessboard.getSidePieces(side));
 			for(int k : Board.get1BitIndexes(j)) {
 				validateAndAdd(side, i, k, moves);
 			}
 		}
 
 		for(int i : Board.get1BitIndexes(chessboard.getPawns(side))) {
-			j = Move.genPawnPush(side, i, chessboard.getAllPieces());
+			j = Move.genPawnPush(side, Board.get1BitMask(i), chessboard.getAllPieces());
 			for(int k : Board.get1BitIndexes(j)) {
 				validateAndAdd(side, i, k, moves);
 			}
 		}
 
 		for(int i : Board.get1BitIndexes(chessboard.getPawns(side))) {
-			j = Move.genDoublePawnPush(side, i, chessboard.getAllPieces());
+			j = Move.genDoublePawnPush(side, Board.get1BitMask(i), chessboard.getAllPieces());
 			for(int k : Board.get1BitIndexes(j)) {
 				validateAndAdd(side, i, k, moves);
 			}
