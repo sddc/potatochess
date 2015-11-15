@@ -1,5 +1,6 @@
 import java.util.ArrayList;
 import java.util.Scanner;
+import java.util.Collections;
 
 public class Game {
 	private Board chessboard;
@@ -25,6 +26,11 @@ public class Game {
 
 			switch(command[0]) {
 				case "moves":
+					Collections.sort(moves);
+					for(Move m : moves) {
+						System.out.println(m.toString());
+					}
+					System.out.println(moves.size() + " moves");
 					break;
 				case "print":
 					chessboard.print();
