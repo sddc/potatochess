@@ -3,19 +3,19 @@ import java.util.Deque;
 import java.util.ArrayDeque;
 
 public class Board {
-	public static final int EMPTY = 0;
-	public static final int WHITE_PAWN = 1;
-	public static final int WHITE_ROOK = 2;
-	public static final int WHITE_KNIGHT = 3;
-	public static final int WHITE_BISHOP = 4;
-	public static final int WHITE_QUEEN = 5;
-	public static final int WHITE_KING = 6;
-	public static final int BLACK_PAWN = 7;
-	public static final int BLACK_ROOK = 8;
-	public static final int BLACK_KNIGHT = 9;
-	public static final int BLACK_BISHOP = 10;
-	public static final int BLACK_QUEEN = 11;
-	public static final int BLACK_KING = 12;
+	public static final int EMPTY = -1;
+	public static final int WHITE_PAWN = 0;
+	public static final int WHITE_ROOK = 1;
+	public static final int WHITE_KNIGHT = 2;
+	public static final int WHITE_BISHOP = 3;
+	public static final int WHITE_QUEEN = 4;
+	public static final int WHITE_KING = 5;
+	public static final int BLACK_PAWN = 6;
+	public static final int BLACK_ROOK = 7;
+	public static final int BLACK_KNIGHT = 8;
+	public static final int BLACK_BISHOP = 9;
+	public static final int BLACK_QUEEN = 10;
+	public static final int BLACK_KING = 11;
 
 	public static final boolean WHITE = true;
 	public static final boolean BLACK = false;
@@ -52,7 +52,6 @@ public class Board {
 		A1=0, B1=1, C1=2, D1=3, E1=4, F1=5, G1=6, H1=7;
 
 	private long[] bitboards = {
-		0L,
 		0x000000000000FF00L, // white pawns
 		0x0000000000000081L, // white rooks
 		0x0000000000000042L, // white knights
@@ -100,11 +99,11 @@ public class Board {
 		long result = 0L;
 
 		if(side == Board.WHITE) {
-			for(int i = 1; i <= 6; i++) {
+			for(int i = 0; i < 6; i++) {
 				result |= bitboards[i];
 			}
 		} else {
-			for(int i = 7; i <= 12; i++) {
+			for(int i = 6; i < 12; i++) {
 				result |= bitboards[i];
 			}
 		}
@@ -129,13 +128,21 @@ public class Board {
 
 	public long getPawns(boolean side) {
 		if(side == Board.WHITE) {
+			return bitboards[0];
+		} else {
+			return bitboards[6];
+		}
+	}
+
+	public long getRooks(boolean side) {
+		if(side == Board.WHITE) {
 			return bitboards[1];
 		} else {
 			return bitboards[7];
 		}
 	}
 
-	public long getRooks(boolean side) {
+	public long getKnights(boolean side) {
 		if(side == Board.WHITE) {
 			return bitboards[2];
 		} else {
@@ -143,7 +150,7 @@ public class Board {
 		}
 	}
 
-	public long getKnights(boolean side) {
+	public long getBishops(boolean side) {
 		if(side == Board.WHITE) {
 			return bitboards[3];
 		} else {
@@ -151,7 +158,7 @@ public class Board {
 		}
 	}
 
-	public long getBishops(boolean side) {
+	public long getQueen(boolean side) {
 		if(side == Board.WHITE) {
 			return bitboards[4];
 		} else {
@@ -159,19 +166,11 @@ public class Board {
 		}
 	}
 
-	public long getQueen(boolean side) {
+	public long getKing(boolean side) {
 		if(side == Board.WHITE) {
 			return bitboards[5];
 		} else {
 			return bitboards[11];
-		}
-	}
-
-	public long getKing(boolean side) {
-		if(side == Board.WHITE) {
-			return bitboards[6];
-		} else {
-			return bitboards[12];
 		}
 	}
 	
@@ -254,19 +253,19 @@ public class Board {
 		// if square int, run it through get1BitMask method
 		// as argument.
 
-		for(int i = 0; i < 13; i++ ) {
+		for(int i = 0; i < 12; i++ ) {
 			if((mask & bitboards[i]) != 0) {
 				return i;
 			}
 		}
-		return 0;
+		return Board.EMPTY;
 	}
 
 	private void modify(int type, long modifier) {
-		if(type == 0) {
+		if(type == Board.EMPTY) {
 			return;
 		}
-		if(type <= 6) {
+		if(type < Board.BLACK_PAWN) {
 			bitboards[type] ^= modifier;
 			whitePieces ^= modifier;
 		} else {
