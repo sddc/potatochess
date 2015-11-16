@@ -1,17 +1,21 @@
 import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Arrays;
 
 public class Game {
 	private Board chessboard;
-	private boolean activeColor;
 	private ArrayList<Move> moves;
 	private boolean whiteKingInCheck = false;
 	private boolean blackKingInCheck = false;
+	private static final String initialPosition = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+	private boolean activeColor;
 
 	public Game() {
-		chessboard = new Board();
-		activeColor = Board.WHITE;
+		chessboard = parseFen(initialPosition);
+		activeColor = chessboard.getActiveColor();
 		moves = genValidMoves(activeColor);
 		start();
 	}
@@ -19,10 +23,12 @@ public class Game {
 	public void start() {
 		Scanner input = new Scanner(System.in);
 		String[] command;
+		String preSplitCommand;
 		
 		System.out.print("> ");
 		while(input.hasNextLine()) {
-			command = input.nextLine().split(" ");
+			preSplitCommand = input.nextLine();
+			command = preSplitCommand.split(" ");
 
 			switch(command[0]) {
 				case "moves":
@@ -48,7 +54,7 @@ public class Game {
 							for(Move m : moves) {
 								if(m.toString().equals(command[1])) {
 									chessboard.move(activeColor, m.fromSquare, m.toSquare);
-									activeColor = !activeColor;
+									activeColor = chessboard.toggleActiveColor();
 									moves = genValidMoves(activeColor);
 									foundMove = true;
 									break;
@@ -67,6 +73,17 @@ public class Game {
 						System.out.println("move command missing square coordinates.");
 						break;
 					}
+				case "setboard":
+					try {
+						String position = preSplitCommand.substring(preSplitCommand.indexOf(' ') + 1,
+								preSplitCommand.length());
+						chessboard = parseFen(position);
+						activeColor = chessboard.getActiveColor();
+						moves = genValidMoves(activeColor);
+					} catch(IllegalArgumentException e) {
+						System.out.println("setboard failed: " + e.getMessage());
+					}
+					break;
 				case "perft":
 					System.out.println(perft(activeColor, Integer.parseInt(command[1])));
 					break;
@@ -302,5 +319,125 @@ public class Game {
 		chessboard.undoMove(side);
 	}
 
+	private Board parseFen(String position) {
+		long[] bitboards = new long[12];
+		Arrays.fill(bitboards, 0L);
+
+		boolean[] moved = new boolean[6];
+		Arrays.fill(moved, true);
+
+		boolean lastMoveDoublePawnPush = false;
+		int behindSquare = Board.EMPTY;
+		boolean activeColor = Board.WHITE;
+
+		String[] fields = position.split(" ");
+
+		if(fields.length != 6) {
+			throw new IllegalArgumentException("fields not equal to 6");
+		}
+
+		// split first field into ranks
+		String[] ranks = fields[0].split("/"); 
+		if(ranks.length != 8) {
+			throw new IllegalArgumentException("ranks not equal to 8");
+		}
+
+		Map<Character, Integer> pieces = new HashMap<Character, Integer>();
+		pieces.put('P', 0);
+		pieces.put('R', 1);
+		pieces.put('N', 2);
+		pieces.put('B', 3);
+		pieces.put('Q', 4);
+		pieces.put('K', 5);
+		pieces.put('p', 6);
+		pieces.put('r', 7);
+		pieces.put('n', 8);
+		pieces.put('b', 9);
+		pieces.put('q', 10);
+		pieces.put('k', 11);
+		long bitMask = 1L;
+
+		// loop over ranks starting at rank 1
+		for(int i = 7; i >= 0; i--) {
+			int rankCount = 0;
+
+			// loop over files starting at file A
+			for(char piece : ranks[i].toCharArray()) {
+				// if piece is a number(empty), shift by that amount
+				if(piece >= '1' && piece <= '8') {
+					int empty = Character.getNumericValue(piece);
+					bitMask = bitMask << empty;
+					rankCount += empty;
+				} else {
+					Integer idx = pieces.get(piece);
+					if(idx == null) {
+						throw new IllegalArgumentException("invalid piece '" + piece + "'");
+					} else {
+						bitboards[idx.intValue()] |= bitMask;
+						bitMask = bitMask << 1;
+						rankCount++;
+					}
+				}
+			}
+
+			if(rankCount != 8) {
+				throw new IllegalArgumentException("rank " + i + " does not have correct number of pieces");
+			}
+		}
+
+		if(fields[1].equals("w")) {
+			// do nothing, activeColor initialized to correct value
+		} else if(fields[1].equals("b")) {
+			activeColor = Board.BLACK;
+		} else {
+			throw new IllegalArgumentException("'" + fields[1] + "' is not a valid active color");
+		}
+
+		if(fields[2].matches("^K?Q?k?q?$|^-$")) {
+			for(char piece : fields[2].toCharArray()) {
+				switch(piece) {
+					case 'K':
+						moved[0] = false;
+						moved[2] = false;
+						break;
+					case 'Q':
+						moved[3] = false;
+						moved[0] = false;
+						break;
+					case 'k':
+						moved[4] = false;
+						moved[1] = false;
+						break;
+					case 'q':
+						moved[5] = false;
+						moved[1] = false;
+						break;
+					default:
+						break;
+				}
+			}
+		} else {
+			throw new IllegalArgumentException("'" + fields[2] + "' is not a valid castling configuration");
+		}
+
+		if(fields[3].matches("^[a-h][1-8]$|^-$")) {
+			if(fields[3].equals("-")) {
+				// do nothing, behindSquare and lastMoveDoublePawnPush already initialized to correct values
+			} else {
+				for(int i = 0; i < Move.squareNames.length; i++) {
+					if(Move.squareNames[i].equals(fields[3])) {
+						behindSquare = i;
+						lastMoveDoublePawnPush = true;
+					}
+				}
+			}
+		} else {
+			throw new IllegalArgumentException("'" + fields[3] + "' is not a valid en passant target square");
+		}
+
+		// todo: halfmove clock, fullmove number
+
+		return new Board(bitboards, moved, lastMoveDoublePawnPush, behindSquare, activeColor);
+	}
 		
 }

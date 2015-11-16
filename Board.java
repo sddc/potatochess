@@ -30,10 +30,12 @@ public class Board {
 	 * 4 = black kingside rook moved?
 	 * 5 = black queenside rook moved?
 	 */
-	private boolean[] moved = {false, false, false, false, false, false};
+	private boolean[] moved;
+
+	private boolean activeColor;
 	
 	// en passant checks
-	private boolean lastMoveDoublePawnPush = false;
+	private boolean lastMoveDoublePawnPush;
 	private int behindSquare;
 
 	/* Bitboard Board Representation
@@ -51,23 +53,9 @@ public class Board {
 		A2=8, B2=9, C2=10, D2=11, E2=12, F2=13, G2=14, H2=15, 
 		A1=0, B1=1, C1=2, D1=3, E1=4, F1=5, G1=6, H1=7;
 
-	private long[] bitboards = {
-		0x000000000000FF00L, // white pawns
-		0x0000000000000081L, // white rooks
-		0x0000000000000042L, // white knights
-		0x0000000000000024L, // white bishops
-		0x0000000000000008L, // white queen
-		0x0000000000000010L, // white king
-		0x00FF000000000000L, // black pawns
-		0x8100000000000000L, // black rooks
-		0x4200000000000000L, // black knights
-		0x2400000000000000L, // black bishops
-		0x0800000000000000L, // black queen
-		0x1000000000000000L  // black king
-	};
-
-	private long whitePieces = genSidePieces(Board.WHITE);
-	private long blackPieces = genSidePieces(Board.BLACK); 
+	private long[] bitboards;
+	private long whitePieces;
+	private long blackPieces;
 	
 	public static final long clearAFile = 0xFEFEFEFEFEFEFEFEL;
 	public static final long clearBFile = 0xFDFDFDFDFDFDFDFDL;
@@ -83,8 +71,27 @@ public class Board {
 
 	private Deque<PreviousMove> previousMoves = new ArrayDeque<PreviousMove>();
 
+	public Board(long[] bitboards, boolean[] moved, boolean lastMoveDoublePawnPush, int behindSquare, boolean activeColor) {
+		this.bitboards = bitboards;
+		this.moved = moved;
+		this.lastMoveDoublePawnPush = lastMoveDoublePawnPush;
+		this.behindSquare = behindSquare;
+		this.activeColor = activeColor;
+		whitePieces = genSidePieces(Board.WHITE);
+		blackPieces = genSidePieces(Board.BLACK); 
+	}
+
 	public boolean[] getCastlingChecks() {
 		return moved.clone();
+	}
+
+	public boolean getActiveColor() {
+		return activeColor;
+	}
+
+	public boolean toggleActiveColor() {
+		activeColor = !activeColor;
+		return activeColor;
 	}
 
 	public int getBehindSquare() {
@@ -176,31 +183,31 @@ public class Board {
 	
 	private void printPiece(int p) {
 		switch(p) {
-			case 0: System.out.print(" ");
+			case -1: System.out.print(" ");
 				break;
-			case 1: System.out.print("P");
+			case 0: System.out.print("P");
 				break;
-			case 2: System.out.print("R");
+			case 1: System.out.print("R");
 				break;
-			case 3: System.out.print("N");
+			case 2: System.out.print("N");
 				break;
-			case 4: System.out.print("B");
+			case 3: System.out.print("B");
 				break;
-			case 5: System.out.print("Q");
+			case 4: System.out.print("Q");
 				break;
-			case 6: System.out.print("K");
+			case 5: System.out.print("K");
 				break;
-			case 7: System.out.print("p");
+			case 6: System.out.print("p");
 				 break;
-			case 8: System.out.print("r");
+			case 7: System.out.print("r");
 				 break;
-			case 9: System.out.print("n");
+			case 8: System.out.print("n");
 				 break;
-			case 10: System.out.print("b");
+			case 9: System.out.print("b");
 				 break;
-			case 11: System.out.print("q");
+			case 10: System.out.print("q");
 				 break;
-			case 12: System.out.print("k");
+			case 11: System.out.print("k");
 				 break;
 			default:
 				break;
