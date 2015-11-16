@@ -8,8 +8,6 @@ import java.util.Arrays;
 public class Game {
 	private Board chessboard;
 	private ArrayList<Move> moves;
-	private boolean whiteKingInCheck = false;
-	private boolean blackKingInCheck = false;
 	private static final String initialPosition = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 	private boolean activeColor;
 
@@ -273,50 +271,54 @@ public class Game {
 				validateAndAdd(side, i, k, moves);
 			}
 		}
-		castling(side);
+		genCastlingMoves(side, moves);
 
 		return moves;
 	}
 
-	private void castling(boolean side) {
+	private void genCastlingMoves(boolean side, ArrayList<Move> moves) {
 		long opponentAttacks = genAttackSquares(!side);
 		// check if king in check
-		if( ((side == Board.WHITE) && whiteKingInCheck) ||
-		    ((side == Board.BLACK) && blackKingInCheck)
-		) {
+		if(kingInCheck(side, opponentAttacks)) {
 			return;
 		}
 
 		// check if kingside castling is available
 		if(chessboard.castlingAvailable(side, Board.KINGSIDE, opponentAttacks)) {
-			// make the move. rook moves implicitly. validateAndAdd
-			// will check if king is attacked after move
 			if(side == Board.WHITE) {
-				validateAndAdd(side, Board.E1, Board.G1, moves);
+				moves.add(new Move(Board.E1, Board.G1));
 			} else {
-				validateAndAdd(side, Board.E8, Board.G8, moves);
+				moves.add(new Move(Board.E8, Board.G8));
 			}
 		}
 
 		// check if queenside castling is available
 		if(chessboard.castlingAvailable(side, Board.QUEENSIDE, opponentAttacks)) {
-			// make the move. rook moves implicitly. validateAndAdd
-			// will check if king is attacked after move
 			if(side == Board.WHITE) {
-				validateAndAdd(side, Board.E1, Board.C1, moves);
+				moves.add(new Move(Board.E1, Board.C1));
 			} else {
-				validateAndAdd(side, Board.E8, Board.C8, moves);
+				moves.add(new Move(Board.E8, Board.C8));
 			}
 		}
 	}
 
 
 	private void validateAndAdd(boolean side, int fromSquare, int toSquare, ArrayList<Move> moves) {
+		// make move then check if king in check
+		// if not, add to moves then undo
 		chessboard.move(side, fromSquare, toSquare);
-		if((genAttackSquares(!side) & chessboard.getKing(side)) == 0L) {
+		if(!kingInCheck(side, genAttackSquares(!side))) {
 			moves.add(new Move(fromSquare, toSquare));
 		}
 		chessboard.undoMove(side);
+	}
+
+	private boolean kingInCheck(boolean side, long opponentAttacks) {
+		if((opponentAttacks & chessboard.getKing(side)) != 0L) {
+			return true;
+		} else {
+			return false;
+		}
 	}
 
 	private Board parseFen(String position) {

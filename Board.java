@@ -330,53 +330,59 @@ public class Board {
 		} else {
 			lastMoveDoublePawnPush = false;	
 		}
-		
-		/*
-		// castling checks
-		if((moved[0] == false) && (fromPieceType == WHITE_KING) && (fromSquare == Board.E1)) {
+
+		// castling move and checks
+		// if moved[0] is true, white king has already moved
+		if(!moved[0] && (fromPieceType == WHITE_KING)) {
 			moved[0] = true;
-		}
+			// check if kingside castle
+			if((fromSquare == Board.E1) && (toSquare == Board.G1)) {
+				modify(WHITE_ROOK, Board.get1BitMask(Board.H1));	
+				modify(WHITE_ROOK, Board.get1BitMask(Board.F1));	
+				moved[2] = true;
+			}	
 
-		if((moved[1] == false) && (fromPieceType == BLACK_KING) && (fromSquare == Board.E8)) {
+			// check if queenside castle
+			if((fromSquare == Board.E1) && (toSquare == Board.C1)) {
+				modify(WHITE_ROOK, Board.get1BitMask(Board.A1));	
+				modify(WHITE_ROOK, Board.get1BitMask(Board.D1));	
+				moved[3] = true;
+			}	
+		}
+		// if moved[1] is true, black king has already moved
+		if(!moved[1] && (fromPieceType == BLACK_KING)) {
 			moved[1] = true;
-		}
+			// check if kingside castle
+			if((fromSquare == Board.E8) && (toSquare == Board.G8)) {
+				modify(BLACK_ROOK, Board.get1BitMask(Board.H8));	
+				modify(BLACK_ROOK, Board.get1BitMask(Board.F8));	
+				moved[4] = true;
+			}	
 
-		if((moved[2] == false) && (fromPieceType == WHITE_ROOK) && (fromSquare == Board.H1)) {
+			// check if queenside castle
+			if((fromSquare == Board.E8) && (toSquare == Board.C8)) {
+				modify(BLACK_ROOK, Board.get1BitMask(Board.A8));	
+				modify(BLACK_ROOK, Board.get1BitMask(Board.D8));	
+				moved[5] = true;
+			}	
+		}
+		
+		// rook castling checks
+		if(!moved[2] && (fromPieceType == WHITE_ROOK) && (fromSquare == Board.H1)) {
 			moved[2] = true;
 		}
 
-		if((moved[3] == false) && (fromPieceType == WHITE_ROOK) && (fromSquare == Board.A1)) {
+		if(!moved[3] && (fromPieceType == WHITE_ROOK) && (fromSquare == Board.A1)) {
 			moved[3] = true;
 		}
 
-		if((moved[4] == false) && (fromPieceType == BLACK_ROOK) && (fromSquare == Board.H8)) {
+		if(!moved[4] && (fromPieceType == BLACK_ROOK) && (fromSquare == Board.H8)) {
 			moved[4] = true;
 		}
 
-		if((moved[5] == false) && (fromPieceType == BLACK_ROOK) && (fromSquare == Board.A8)) {
+		if(!moved[5] && (fromPieceType == BLACK_ROOK) && (fromSquare == Board.A8)) {
 			moved[5] = true;
 		}
-		
-		// kingside castling move
-		if( ((fromPieceType == WHITE_KING) && (fromSquare == Board.E1) && (toSquare == Board.G1)) ||
-		    ((fromPieceType == BLACK_KING) && (fromSquare == Board.E8) && (toSquare == Board.G8)) ) {
-			if(side == Board.WHITE) {
-				move(side, Board.H1, Board.F1);
-			} else {
-				move(side, Board.H8, Board.F8);
-			}
-		}	
-
-		// queenside castling move
-		if( ((fromPieceType == WHITE_KING) && (fromSquare == Board.E1) && (toSquare == Board.C1)) ||
-		    ((fromPieceType == BLACK_KING) && (fromSquare == Board.E8) && (toSquare == Board.C8)) ) {
-			if(side == Board.WHITE) {
-				move(side, Board.A1, Board.D1);
-			} else {
-				move(side, Board.A8, Board.D8);
-			}
-		}
-		*/
 	}
 
 	public void undoMove(boolean side) {
@@ -413,6 +419,35 @@ public class Board {
 			}
 		}
 
+		// restore white castling rooks
+		if(move.fromPieceType == WHITE_KING) {
+			// undo kingside castle
+			if((move.fromSquare == Board.E1) && (move.toSquare == Board.G1)) {
+				modify(WHITE_ROOK, Board.get1BitMask(Board.H1));	
+				modify(WHITE_ROOK, Board.get1BitMask(Board.F1));	
+			}	
+
+			// undo queenside castle
+			if((move.fromSquare == Board.E1) && (move.toSquare == Board.C1)) {
+				modify(WHITE_ROOK, Board.get1BitMask(Board.A1));	
+				modify(WHITE_ROOK, Board.get1BitMask(Board.D1));	
+			}	
+		}
+		
+		// restore black castling rooks
+		if(move.fromPieceType == BLACK_KING) {
+			// undo kingside castle
+			if((move.fromSquare == Board.E8) && (move.toSquare == Board.G8)) {
+				modify(BLACK_ROOK, Board.get1BitMask(Board.H8));	
+				modify(BLACK_ROOK, Board.get1BitMask(Board.F8));	
+			}	
+
+			// undo queenside castle
+			if((move.fromSquare == Board.E8) && (move.toSquare == Board.C8)) {
+				modify(BLACK_ROOK, Board.get1BitMask(Board.A8));	
+				modify(BLACK_ROOK, Board.get1BitMask(Board.D8));	
+			}	
+		}
 		/*
 
 		// unpromote queen to pawn
@@ -429,21 +464,14 @@ public class Board {
 				}
 			}
 		}
-
-		// if rook move was involved in castling, undo the king move
-		if( ((move.fromPieceType == WHITE_ROOK) && (move.fromSquare == Board.H1) && (move.toSquare == Board.F1)) ||
-		    ((move.fromPieceType == WHITE_ROOK) && (move.fromSquare == Board.A1) && (move.toSquare == Board.D1)) ||
-		    ((move.fromPieceType == BLACK_ROOK) && (move.fromSquare == Board.H8) && (move.toSquare == Board.F8)) ||
-		    ((move.fromPieceType == BLACK_ROOK) && (move.fromSquare == Board.A8) && (move.toSquare == Board.D8)) ) {
-			undoMove(side);
-		    }
 		    */
 	}
 
 	public boolean castlingAvailable(boolean side, boolean squares, long attacks) {
 		// side: true = white, false = black
 		// squares: true = kingside, false = queenside
-		long mask;
+		long pieceMask;
+		long attackMask;
 		if(side == Board.WHITE) {
 			// check if king moved
 			if(moved[0]) {
@@ -455,13 +483,15 @@ public class Board {
 				if(moved[2]) {
 					return false;
 				}
-				mask = (get1BitMask(Board.F1) | get1BitMask(Board.G1));
+				pieceMask = 0x60L;
+				attackMask = pieceMask;
 			} else {
 				// check if queenside rook moved
 				if(moved[3]) {
 					return false;
 				}
-				mask = (get1BitMask(Board.B1) | get1BitMask(Board.C1) | get1BitMask(Board.D1));
+				pieceMask = 0xEL;
+				attackMask = 0xCL;
 			}
 		} else {
 			// check if king moved
@@ -474,18 +504,21 @@ public class Board {
 				if(moved[4]) {
 					return false;
 				}
-				mask = (get1BitMask(Board.F8) | get1BitMask(Board.G8));
+				pieceMask = 0x6000000000000000L;
+				attackMask = pieceMask;
 			} else {
 				// check if queenside rook moved
 				if(moved[5]) {
 					return false;
 				}
-				mask = (get1BitMask(Board.B8) | get1BitMask(Board.C8) | get1BitMask(Board.D8));
+				pieceMask = 0xE00000000000000L;
+				attackMask = 0xC00000000000000L;
 			}
 		}
 
-		// check if own pieces between king and rook. also check if opponent attacking those squares
-		if(((mask & getSidePieces(side)) == 0L) && ((mask & attacks) == 0L)) {
+		// check if any pieces between king and rook. also check if opponent
+		// is attacking squares king passes or ends up on
+		if(((pieceMask & getAllPieces()) == 0L) && ((attackMask & attacks) == 0L)) {
 			return true;
 		} else {
 			return false;
