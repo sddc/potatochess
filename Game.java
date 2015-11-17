@@ -166,26 +166,26 @@ public class Game {
 			queen = Board.BLACK_QUEEN;
 		}
 
-		attacks |= Move.genPawnAttack(side, chessboard.getPawns(side), chessboard.getSidePieces(side));
+		attacks |= MoveGen.genPawnAttack(side, chessboard.getPawns(side), chessboard.getSidePieces(side));
 
 		for(int i : Board.get1BitIndexes(chessboard.getRooks(side))) {
-			attacks |= Move.genSlidingPieceMoves(rook, i, chessboard.getAllPieces(), chessboard.getSidePieces(side));
+			attacks |= MoveGen.genSlidingPieceMoves(rook, i, chessboard.getAllPieces(), chessboard.getSidePieces(side));
 		}
 
 		for(int i : Board.get1BitIndexes(chessboard.getBishops(side))) {
-			attacks |= Move.genSlidingPieceMoves(bishop, i, chessboard.getAllPieces(), chessboard.getSidePieces(side));
+			attacks |= MoveGen.genSlidingPieceMoves(bishop, i, chessboard.getAllPieces(), chessboard.getSidePieces(side));
 		}
 
 		for(int i : Board.get1BitIndexes(chessboard.getQueen(side))) {
-			attacks |= Move.genSlidingPieceMoves(queen, i, chessboard.getAllPieces(), chessboard.getSidePieces(side));
+			attacks |= MoveGen.genSlidingPieceMoves(queen, i, chessboard.getAllPieces(), chessboard.getSidePieces(side));
 		}
 
 		for(int i : Board.get1BitIndexes(chessboard.getKnights(side))) {
-			attacks |= Move.knightMoves[i] & ~chessboard.getSidePieces(side);
+			attacks |= MoveGen.knightMoves[i] & ~chessboard.getSidePieces(side);
 		}
 
 		for(int i : Board.get1BitIndexes(chessboard.getKing(side))) {
-			attacks |= Move.kingMoves[i] & ~chessboard.getSidePieces(side);
+			attacks |= MoveGen.kingMoves[i] & ~chessboard.getSidePieces(side);
 		}
 		return attacks;
 	}
@@ -217,56 +217,56 @@ public class Game {
 		}
 
 		for(int i : Board.get1BitIndexes(chessboard.getPawns(side))) {
-			j = pawnAttack & Move.genPawnAttack(side, Board.get1BitMask(i), chessboard.getSidePieces(side));
+			j = pawnAttack & MoveGen.genPawnAttack(side, Board.get1BitMask(i), chessboard.getSidePieces(side));
 			for(int k : Board.get1BitIndexes(j)) {
 				validateAndAdd(side, i, k, moves);
 			}
 		}
 
 		for(int i : Board.get1BitIndexes(chessboard.getPawns(side))) {
-			j = Move.genPawnPush(side, Board.get1BitMask(i), chessboard.getAllPieces());
+			j = MoveGen.genPawnPush(side, Board.get1BitMask(i), chessboard.getAllPieces());
 			for(int k : Board.get1BitIndexes(j)) {
 				validateAndAdd(side, i, k, moves);
 			}
 		}
 
 		for(int i : Board.get1BitIndexes(chessboard.getPawns(side))) {
-			j = Move.genDoublePawnPush(side, Board.get1BitMask(i), chessboard.getAllPieces());
+			j = MoveGen.genDoublePawnPush(side, Board.get1BitMask(i), chessboard.getAllPieces());
 			for(int k : Board.get1BitIndexes(j)) {
 				validateAndAdd(side, i, k, moves);
 			}
 		}
 
 		for(int i : Board.get1BitIndexes(chessboard.getRooks(side))) {
-			j = Move.genSlidingPieceMoves(rook, i, chessboard.getAllPieces(), chessboard.getSidePieces(side));
+			j = MoveGen.genSlidingPieceMoves(rook, i, chessboard.getAllPieces(), chessboard.getSidePieces(side));
 			for(int k : Board.get1BitIndexes(j)) {
 				validateAndAdd(side, i, k, moves);
 			}
 		}
 
 		for(int i : Board.get1BitIndexes(chessboard.getBishops(side))) {
-			j = Move.genSlidingPieceMoves(bishop, i, chessboard.getAllPieces(), chessboard.getSidePieces(side));
+			j = MoveGen.genSlidingPieceMoves(bishop, i, chessboard.getAllPieces(), chessboard.getSidePieces(side));
 			for(int k : Board.get1BitIndexes(j)) {
 				validateAndAdd(side, i, k, moves);
 			}
 		}
 
 		for(int i : Board.get1BitIndexes(chessboard.getQueen(side))) {
-			j = Move.genSlidingPieceMoves(queen, i, chessboard.getAllPieces(), chessboard.getSidePieces(side));
+			j = MoveGen.genSlidingPieceMoves(queen, i, chessboard.getAllPieces(), chessboard.getSidePieces(side));
 			for(int k : Board.get1BitIndexes(j)) {
 				validateAndAdd(side, i, k, moves);
 			}
 		}
 
 		for(int i : Board.get1BitIndexes(chessboard.getKnights(side))) {
-			j = Move.knightMoves[i] & ~chessboard.getSidePieces(side);
+			j = MoveGen.knightMoves[i] & ~chessboard.getSidePieces(side);
 			for(int k : Board.get1BitIndexes(j)) {
 				validateAndAdd(side, i, k, moves);
 			}
 		}
 
 		for(int i : Board.get1BitIndexes(chessboard.getKing(side))) {
-			j = Move.kingMoves[i] & ~chessboard.getSidePieces(side);
+			j = MoveGen.kingMoves[i] & ~chessboard.getSidePieces(side);
 			for(int k : Board.get1BitIndexes(j)) {
 				validateAndAdd(side, i, k, moves);
 			}
