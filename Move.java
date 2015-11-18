@@ -39,9 +39,9 @@ public class Move {
 	private int move = 0;
 
 	public Move(Square from, Square to) {
-		move |= to.ordinal();
+		move |= to.intValue;
 		move = move << 6;
-		move |= from.ordinal();
+		move |= from.intValue;
 	}
 
 	public Square getFromSquare() {
@@ -54,7 +54,7 @@ public class Move {
 
 	/////////////////////////////////////
 	public void setPieceType(Piece type) {
-		move |= (type.ordinal() << 12);
+		move |= (type.intValue << 12);
 	}
 
 	public Piece getPieceType() {
@@ -63,7 +63,7 @@ public class Move {
 
 	public void setCapturePieceType(Piece type) {
 		setFlag(Flag.CAPTURE);
-		move |= (type.ordinal() << 16);
+		move |= (type.intValue << 16);
 	}
 
 	public Piece getCapturePieceType() {
@@ -87,7 +87,7 @@ public class Move {
 
 	public void setPromotionType(Piece type) {
 		setFlag(Flag.PROMOTION);
-		move |= (type.ordinal() << 28);
+		move |= (type.intValue << 28);
 	}
 
 	public Piece getPromotionType() {
