@@ -3,56 +3,30 @@ import java.util.Deque;
 import java.util.ArrayDeque;
 
 public class Board {
-	public static final int EMPTY = -1;
-	public static final int WHITE_PAWN = 0;
-	public static final int WHITE_ROOK = 1;
-	public static final int WHITE_KNIGHT = 2;
-	public static final int WHITE_BISHOP = 3;
-	public static final int WHITE_QUEEN = 4;
-	public static final int WHITE_KING = 5;
-	public static final int BLACK_PAWN = 6;
-	public static final int BLACK_ROOK = 7;
-	public static final int BLACK_KNIGHT = 8;
-	public static final int BLACK_BISHOP = 9;
-	public static final int BLACK_QUEEN = 10;
-	public static final int BLACK_KING = 11;
-
 	public static final boolean WHITE = true;
 	public static final boolean BLACK = false;
 	public static final boolean KINGSIDE = true;
 	public static final boolean QUEENSIDE = false;
 	
-	/* castling moved array checks
-	 * 0 = white king moved?
-	 * 1 = black king moved?
-	 * 2 = white kingside rook moved?
-	 * 3 = white queenside rook moved?
-	 * 4 = black kingside rook moved?
-	 * 5 = black queenside rook moved?
+	/* castleStatus array 
+	 * 0 = white kingside not rook moved?
+	 * 1 = white queenside not rook moved?
+	 * 2 = black kingside not rook moved?
+	 * 3 = black queenside not rook moved?
 	 */
-	private boolean[] moved;
+	private boolean[] castleStatus;
 
 	private boolean activeColor;
 	
 	// en passant checks
 	private boolean lastMoveDoublePawnPush;
-	private int behindSquare;
+	private Square epTargetSquare;
 
 	/* Bitboard Board Representation
 	 * Square to bit mapping
 	 * H8 = MSB
 	 * A1 = LSB
 	 */
-	public static final int
-		A8=56, B8=57, C8=58, D8=59, E8=60, F8=61, G8=62, H8=63, 
-		A7=48, B7=49, C7=50, D7=51, E7=52, F7=53, G7=54, H7=55, 
-		A6=40, B6=41, C6=42, D6=43, E6=44, F6=45, G6=46, H6=47, 
-		A5=32, B5=33, C5=34, D5=35, E5=36, F5=37, G5=38, H5=39, 
-		A4=24, B4=25, C4=26, D4=27, E4=28, F4=29, G4=30, H4=31, 
-		A3=16, B3=17, C3=18, D3=19, E3=20, F3=21, G3=22, H3=23, 
-		A2=8, B2=9, C2=10, D2=11, E2=12, F2=13, G2=14, H2=15, 
-		A1=0, B1=1, C1=2, D1=3, E1=4, F1=5, G1=6, H1=7;
-
 	private long[] bitboards;
 	private long whitePieces;
 	private long blackPieces;
@@ -62,27 +36,25 @@ public class Board {
 	public static final long clearGFile = 0xBFBFBFBFBFBFBFBFL;
 	public static final long clearHFile = 0x7F7F7F7F7F7F7F7FL;
 
+	public static final long maskRank1 = 0x00000000000000FFL;
 	public static final long maskRank2 = 0x000000000000FF00L;
 	public static final long maskRank3 = 0x0000000000FF0000L;
 	public static final long maskRank4 = 0x00000000FF000000L;
 	public static final long maskRank5 = 0x000000FF00000000L;
 	public static final long maskRank6 = 0x0000FF0000000000L;
 	public static final long maskRank7 = 0x00FF000000000000L;
+	public static final long maskRank8 = 0xFF00000000000000L;
 
 	private Deque<PreviousMove> previousMoves = new ArrayDeque<PreviousMove>();
 
-	public Board(long[] bitboards, boolean[] moved, boolean lastMoveDoublePawnPush, int behindSquare, boolean activeColor) {
+	public Board(long[] bitboards, boolean[] castleStatus, boolean lastMoveDoublePawnPush, Square epTargetSquare, boolean activeColor) {
 		this.bitboards = bitboards;
-		this.moved = moved;
+		this.castleStatus = castleStatus;
 		this.lastMoveDoublePawnPush = lastMoveDoublePawnPush;
-		this.behindSquare = behindSquare;
+		this.epTargetSquare = epTargetSquare;
 		this.activeColor = activeColor;
 		whitePieces = genSidePieces(Board.WHITE);
 		blackPieces = genSidePieces(Board.BLACK); 
-	}
-
-	public boolean[] getCastlingChecks() {
-		return moved.clone();
 	}
 
 	public boolean getActiveColor() {
@@ -94,8 +66,8 @@ public class Board {
 		return activeColor;
 	}
 
-	public int getBehindSquare() {
-		return behindSquare;
+	public Square getEpTargetSquare() {
+		return epTargetSquare;
 	}
 
 	public boolean lastMoveDPP() {
@@ -181,33 +153,33 @@ public class Board {
 		}
 	}
 	
-	private void printPiece(int p) {
-		switch(p) {
-			case -1: System.out.print(" ");
+	private void printPiece(Piece type) {
+		switch(type) {
+			case EMPTY: System.out.print(" ");
 				break;
-			case 0: System.out.print("P");
+			case WHITE_PAWN: System.out.print("P");
 				break;
-			case 1: System.out.print("R");
+			case WHITE_ROOK: System.out.print("R");
 				break;
-			case 2: System.out.print("N");
+			case WHITE_KNIGHT: System.out.print("N");
 				break;
-			case 3: System.out.print("B");
+			case WHITE_BISHOP: System.out.print("B");
 				break;
-			case 4: System.out.print("Q");
+			case WHITE_QUEEN: System.out.print("Q");
 				break;
-			case 5: System.out.print("K");
+			case WHITE_KING: System.out.print("K");
 				break;
-			case 6: System.out.print("p");
+			case BLACK_PAWN: System.out.print("p");
 				 break;
-			case 7: System.out.print("r");
+			case BLACK_ROOK: System.out.print("r");
 				 break;
-			case 8: System.out.print("n");
+			case BLACK_KNIGHT: System.out.print("n");
 				 break;
-			case 9: System.out.print("b");
+			case BLACK_BISHOP: System.out.print("b");
 				 break;
-			case 10: System.out.print("q");
+			case BLACK_QUEEN: System.out.print("q");
 				 break;
-			case 11: System.out.print("k");
+			case BLACK_KING: System.out.print("k");
 				 break;
 			default:
 				break;
@@ -222,7 +194,7 @@ public class Board {
 			System.out.print(" " + rank + " |");
 			for(int j = i; j < (i + 8); j++) {
 				System.out.print(" ");
-				printPiece(getPieceType(get1BitMask(j)));
+				printPiece(getPieceType(Square.toEnum(j)));
 				System.out.print(" |");
 			}
 			System.out.print(" " + rank--);
@@ -231,14 +203,14 @@ public class Board {
 		System.out.println("     A   B   C   D   E   F   G   H");
 	}
 
-	public static ArrayList<Integer> get1BitIndexes(long x) {
+	public static ArrayList<Square> get1BitIndexes(long x) {
 		long compare = 0x0000000000000001L;
 		int index = 0;
-		ArrayList<Integer> indexes = new ArrayList<Integer>();
+		ArrayList<Square> indexes = new ArrayList<Square>();
 
 		while(x != 0) {
 			if((x & compare) == 1L) {
-				indexes.add(index);
+				indexes.add(Square.toEnum(index));
 			}
 			x = x >>> 1;
 			index++;
@@ -247,142 +219,157 @@ public class Board {
 		return indexes;
 	}
 
-	public static long get1BitMask(int p) {
+	public static long get1BitMask(Square s) {
 		long mask = 0x0000000000000001L;
-		if(p == 0) {
+		if(s.intValue == 0) {
 			return mask;
 		} else {
-			return mask << p;
+			return mask << s.intValue;
 		}
 	}
 
-	public int getPieceType(long mask) {
-		// if square int, run it through get1BitMask method
-		// as argument.
-
+	public Piece getPieceType(Square s) {
+		long mask = get1BitMask(s);
 		for(int i = 0; i < 12; i++ ) {
 			if((mask & bitboards[i]) != 0) {
-				return i;
+				return Piece.toEnum(i);
 			}
 		}
-		return Board.EMPTY;
+		return Piece.EMPTY;
 	}
 
-	private void modify(int type, long modifier) {
-		if(type == Board.EMPTY) {
+	private void modify(Piece type, long modifier) {
+		// type selects which bitboard to modify
+		// modifier is bitmask or which bits to toggle
+		if(type == Piece.EMPTY) {
 			return;
 		}
-		if(type < Board.BLACK_PAWN) {
-			bitboards[type] ^= modifier;
+		if(type.intValue < 6) {
+			bitboards[type.intValue] ^= modifier;
 			whitePieces ^= modifier;
 		} else {
-			bitboards[type] ^= modifier;
+			bitboards[type.intValue] ^= modifier;
 			blackPieces ^= modifier;
 		}
 	}
 
-	public void move(boolean side, int fromSquare, int toSquare) {
-		// assumes fromSquare, toSquare are at least pseudovalid for piece types
-		long fromMask = get1BitMask(fromSquare);
-		long toMask = get1BitMask(toSquare);
-		int fromPieceType = getPieceType(fromMask);
-		int toPieceType = getPieceType(toMask);
+	public void move(boolean side, Move m) {
+		// assumes m is at least pseudo legal
 
 		// save move to undo
-		previousMoves.addFirst(new PreviousMove(fromSquare, toSquare, fromPieceType, toPieceType, moved, lastMoveDoublePawnPush, behindSquare));
+		previousMoves.addFirst(new PreviousMove(m, castleStatus, lastMoveDoublePawnPush, epTargetSquare));
 
-		// XOR fromPieceType's bitboard with fromMask to toggle to 0
-		modify(fromPieceType, fromMask);	
-		// XOR fromPieceType's bitboard with toMask to toggle to 1
-		modify(fromPieceType, toMask);	
+		Square fromSquare = m.getFromSquare();
+		Square toSquare = m.getToSquare();
+		long fromMask = get1BitMask(fromSquare);
+		long toMask = get1BitMask(toSquare);
+		Piece pieceType = m.getPieceType();
 
-		// if toPieceType is not empty, it is a capture
-		if(toPieceType != EMPTY) {
-			// XOR toPieceType's bitboard with toMask to toggle to 0
-			modify(toPieceType, toMask);	
+		// move within bitboard
+		modify(pieceType, fromMask | toMask);
+
+		// remove bit from capture bitboard
+		if(m.getFlag(Flag.CAPTURE)) {
+			Piece capturePieceType = m.getCapturePieceType();
+			modify(capturePieceType, toMask);
+
+			// castling checks
+			if(capturePieceType == Piece.WHITE_ROOK && toSquare == Square.H1) {
+				castleStatus[0] = false;
+			}	
+
+			if(capturePieceType == Piece.WHITE_ROOK && toSquare == Square.A1) {
+				castleStatus[1] = false;
+			}	
+
+			if(capturePieceType == Piece.BLACK_ROOK && toSquare == Square.H8) {
+				castleStatus[2] = false;
+			}	
+
+			if(capturePieceType == Piece.BLACK_ROOK && toSquare == Square.A8) {
+				castleStatus[3] = false;
+			}
 		}
 
-
-		// en passant check and capture
-		if((fromPieceType == WHITE_PAWN) || (fromPieceType == BLACK_PAWN)) {
-			if((lastMoveDoublePawnPush == true) && (toSquare == behindSquare)) {
-				// capture
-				if(side == Board.WHITE) {
-					modify(BLACK_PAWN, get1BitMask(toSquare-8));
-				} else {
-					modify(WHITE_PAWN, get1BitMask(toSquare+8));
-				}	
-				lastMoveDoublePawnPush = false;	
+		if(m.getFlag(Flag.DOUBLE_PAWN_PUSH)) {
+			lastMoveDoublePawnPush = true;
+			if(side == Board.WHITE) {
+				epTargetSquare = Square.toEnum(toSquare.intValue-8);
 			} else {
-				// check for double pawn push
-				if( ((fromMask & maskRank2) != 0L && (toMask & maskRank4) != 0L) ||
-				((fromMask & maskRank7) != 0L && (toMask & maskRank5) != 0L) ) {
-					lastMoveDoublePawnPush = true;	
-					if(side == Board.WHITE) {
-						behindSquare = toSquare-8;
-					} else {
-						behindSquare = toSquare+8;
-					}
-				} else {
-					lastMoveDoublePawnPush = false;	
-				}
+				epTargetSquare = Square.toEnum(toSquare.intValue+8);
 			}
 		} else {
-			lastMoveDoublePawnPush = false;	
+			lastMoveDoublePawnPush = false;
 		}
 
-		// castling move and checks
-		// if moved[0] is true, white king has already moved
-		if(!moved[0] && (fromPieceType == WHITE_KING)) {
-			moved[0] = true;
-			// check if kingside castle
-			if((fromSquare == Board.E1) && (toSquare == Board.G1)) {
-				modify(WHITE_ROOK, Board.get1BitMask(Board.H1));	
-				modify(WHITE_ROOK, Board.get1BitMask(Board.F1));	
-				moved[2] = true;
-			}	
-
-			// check if queenside castle
-			if((fromSquare == Board.E1) && (toSquare == Board.C1)) {
-				modify(WHITE_ROOK, Board.get1BitMask(Board.A1));	
-				modify(WHITE_ROOK, Board.get1BitMask(Board.D1));	
-				moved[3] = true;
-			}	
-		}
-		// if moved[1] is true, black king has already moved
-		if(!moved[1] && (fromPieceType == BLACK_KING)) {
-			moved[1] = true;
-			// check if kingside castle
-			if((fromSquare == Board.E8) && (toSquare == Board.G8)) {
-				modify(BLACK_ROOK, Board.get1BitMask(Board.H8));	
-				modify(BLACK_ROOK, Board.get1BitMask(Board.F8));	
-				moved[4] = true;
-			}	
-
-			// check if queenside castle
-			if((fromSquare == Board.E8) && (toSquare == Board.C8)) {
-				modify(BLACK_ROOK, Board.get1BitMask(Board.A8));	
-				modify(BLACK_ROOK, Board.get1BitMask(Board.D8));	
-				moved[5] = true;
-			}	
-		}
-		
-		// rook castling checks
-		if(!moved[2] && (fromPieceType == WHITE_ROOK) && (fromSquare == Board.H1)) {
-			moved[2] = true;
+		if(m.getFlag(Flag.EP_CAPTURE)) {
+			if(side == Board.WHITE) {
+				modify(Piece.BLACK_PAWN, get1BitMask(Square.toEnum(toSquare.intValue-8)));
+			} else {
+				modify(Piece.WHITE_PAWN, get1BitMask(Square.toEnum(toSquare.intValue+8)));
+			}
 		}
 
-		if(!moved[3] && (fromPieceType == WHITE_ROOK) && (fromSquare == Board.A1)) {
-			moved[3] = true;
+		if(m.getFlag(Flag.CASTLE)) {
+			if(m.getCastleType()) {
+				// kingside castle
+				if(side == Board.WHITE) {
+					modify(Piece.WHITE_ROOK, get1BitMask(Square.H1) | get1BitMask(Square.F1));
+					castleStatus[0] = false;
+					castleStatus[1] = false;
+				} else {
+					modify(Piece.BLACK_ROOK, get1BitMask(Square.H8) | get1BitMask(Square.F8));
+					castleStatus[2] = false;
+					castleStatus[3] = false;
+				}
+			} else {
+				// queenside castle
+				if(side == Board.WHITE) {
+					modify(Piece.WHITE_ROOK, get1BitMask(Square.A1) | get1BitMask(Square.D1));
+					castleStatus[0] = false;
+					castleStatus[1] = false;
+				} else {
+					modify(Piece.BLACK_ROOK, get1BitMask(Square.A8) | get1BitMask(Square.D8));
+					castleStatus[2] = false;
+					castleStatus[3] = false;
+				}
+			}
 		}
 
-		if(!moved[4] && (fromPieceType == BLACK_ROOK) && (fromSquare == Board.H8)) {
-			moved[4] = true;
+		if(m.getFlag(Flag.PROMOTION)) {
+			// remove bit from pawn bitboard
+			modify(pieceType, toMask);
+
+			// add bit to chosen piece
+			modify(m.getPromotionType(), toMask);
 		}
 
-		if(!moved[5] && (fromPieceType == BLACK_ROOK) && (fromSquare == Board.A8)) {
-			moved[5] = true;
+		// castling checks
+		if(pieceType == Piece.WHITE_KING && fromSquare == Square.E1) {
+			castleStatus[0] = false;
+			castleStatus[1] = false;
 		}
+
+		if(pieceType == Piece.BLACK_KING && fromSquare == Square.E8) {
+			castleStatus[2] = false;
+			castleStatus[3] = false;
+		}
+
+		if(pieceType == Piece.WHITE_ROOK && fromSquare == Square.H1) {
+			castleStatus[0] = false;
+		}	
+
+		if(pieceType == Piece.WHITE_ROOK && fromSquare == Square.A1) {
+			castleStatus[1] = false;
+		}	
+
+		if(pieceType == Piece.BLACK_ROOK && fromSquare == Square.H8) {
+			castleStatus[2] = false;
+		}	
+
+		if(pieceType == Piece.BLACK_ROOK && fromSquare == Square.A8) {
+			castleStatus[3] = false;
+		}	
 	}
 
 	public void undoMove(boolean side) {
@@ -390,81 +377,63 @@ public class Board {
 			return;
 		}
 
-		PreviousMove move = previousMoves.removeFirst();
-		long fromMask = get1BitMask(move.fromSquare);
-		long toMask = get1BitMask(move.toSquare);
+		// get move information for previous move
+		PreviousMove pm = previousMoves.removeFirst();
+		Move m = pm.move;
+		castleStatus = pm.castleStatus;
+		lastMoveDoublePawnPush = pm.lastMoveDoublePawnPush;
+		epTargetSquare = pm.epTargetSquare;
 
-		// restore checks
-		moved = move.moved;
-		lastMoveDoublePawnPush = move.lastMoveDoublePawnPush;
-		behindSquare = move.behindSquare;
+		Square fromSquare = m.getFromSquare();
+		Square toSquare = m.getToSquare();
+		long fromMask = get1BitMask(fromSquare);
+		long toMask = get1BitMask(toSquare);
+		Piece pieceType = m.getPieceType();
 
-		// undo move
-		modify(move.fromPieceType, fromMask);
-		modify(move.fromPieceType, toMask);
+		// restore move within bitboard
+		modify(pieceType, fromMask | toMask);
 
-		// undo capture
-		if(move.toPieceType != EMPTY) {
-			modify(move.toPieceType, toMask);
+		// restore bit from capture bitboard
+		if(m.getFlag(Flag.CAPTURE)) {
+			modify(m.getCapturePieceType(), toMask);
 		}
-		
-		if((move.fromPieceType == WHITE_PAWN) || (move.fromPieceType == BLACK_PAWN)) {
-			// undo en passant capture
-			if((move.lastMoveDoublePawnPush == true) && (move.toSquare == move.behindSquare)) {
-				if(side == Board.WHITE) {
-					modify(BLACK_PAWN, get1BitMask(move.toSquare-8));
-				} else {
-					modify(WHITE_PAWN, get1BitMask(move.toSquare+8));
-				}	
+
+		// restore ep capture
+		if(m.getFlag(Flag.EP_CAPTURE)) {
+			if(side == Board.WHITE) {
+				modify(Piece.BLACK_PAWN, get1BitMask(Square.toEnum(toSquare.intValue-8)));
+			} else {
+				modify(Piece.WHITE_PAWN, get1BitMask(Square.toEnum(toSquare.intValue+8)));
 			}
 		}
 
-		// restore white castling rooks
-		if(move.fromPieceType == WHITE_KING) {
-			// undo kingside castle
-			if((move.fromSquare == Board.E1) && (move.toSquare == Board.G1)) {
-				modify(WHITE_ROOK, Board.get1BitMask(Board.H1));	
-				modify(WHITE_ROOK, Board.get1BitMask(Board.F1));	
-			}	
-
-			// undo queenside castle
-			if((move.fromSquare == Board.E1) && (move.toSquare == Board.C1)) {
-				modify(WHITE_ROOK, Board.get1BitMask(Board.A1));	
-				modify(WHITE_ROOK, Board.get1BitMask(Board.D1));	
-			}	
-		}
-		
-		// restore black castling rooks
-		if(move.fromPieceType == BLACK_KING) {
-			// undo kingside castle
-			if((move.fromSquare == Board.E8) && (move.toSquare == Board.G8)) {
-				modify(BLACK_ROOK, Board.get1BitMask(Board.H8));	
-				modify(BLACK_ROOK, Board.get1BitMask(Board.F8));	
-			}	
-
-			// undo queenside castle
-			if((move.fromSquare == Board.E8) && (move.toSquare == Board.C8)) {
-				modify(BLACK_ROOK, Board.get1BitMask(Board.A8));	
-				modify(BLACK_ROOK, Board.get1BitMask(Board.D8));	
-			}	
-		}
-		/*
-
-		// unpromote queen to pawn
-		if((move.fromPieceType == WHITE_PAWN) || (move.fromPieceType == BLACK_PAWN)) {
-			if(side == Board.WHITE) {
-				if(move.toSquare >= Board.A8 && move.toSquare <= Board.H8) {
-					modify(WHITE_PAWN, toMask);
-					modify(WHITE_QUEEN, toMask);
+		// restore castle	
+		if(m.getFlag(Flag.CASTLE)) {
+			if(m.getCastleType()) {
+				// kingside castle
+				if(side == Board.WHITE) {
+					modify(Piece.WHITE_ROOK, get1BitMask(Square.H1) | get1BitMask(Square.F1));
+				} else {
+					modify(Piece.BLACK_ROOK, get1BitMask(Square.H8) | get1BitMask(Square.F8));
 				}
 			} else {
-				if(move.toSquare >= Board.A1 && move.toSquare <= Board.H1) {
-					modify(BLACK_PAWN, toMask);
-					modify(BLACK_QUEEN, toMask);
+				// queenside castle
+				if(side == Board.WHITE) {
+					modify(Piece.WHITE_ROOK, get1BitMask(Square.A1) | get1BitMask(Square.D1));
+				} else {
+					modify(Piece.BLACK_ROOK, get1BitMask(Square.A8) | get1BitMask(Square.D8));
 				}
 			}
 		}
-		    */
+
+		// restore promotion	
+		if(m.getFlag(Flag.PROMOTION)) {
+			// restore bit from pawn bitboard
+			modify(pieceType, toMask);
+
+			// remove bit from chosen piece
+			modify(m.getPromotionType(), toMask);
+		}
 	}
 
 	public boolean castlingAvailable(boolean side, boolean squares, long attacks) {
@@ -473,42 +442,32 @@ public class Board {
 		long pieceMask;
 		long attackMask;
 		if(side == Board.WHITE) {
-			// check if king moved
-			if(moved[0]) {
-				return false;
-			}
-
 			if(squares == Board.KINGSIDE) {
-				// check if kingside rook moved
-				if(moved[2]) {
+				// check if kingside castle available
+				if(!castleStatus[0]) {
 					return false;
 				}
 				pieceMask = 0x60L;
 				attackMask = pieceMask;
 			} else {
-				// check if queenside rook moved
-				if(moved[3]) {
+				// check if queenside castle available
+				if(!castleStatus[1]) {
 					return false;
 				}
 				pieceMask = 0xEL;
 				attackMask = 0xCL;
 			}
 		} else {
-			// check if king moved
-			if(moved[1]) {
-				return false;
-			}
-
 			if(squares == Board.KINGSIDE) {
-				// check if kingside rook moved
-				if(moved[4]) {
+				// check if kingside castle available
+				if(!castleStatus[2]) {
 					return false;
 				}
 				pieceMask = 0x6000000000000000L;
 				attackMask = pieceMask;
 			} else {
-				// check if queenside rook moved
-				if(moved[5]) {
+				// check if queenside castle available
+				if(!castleStatus[3]) {
 					return false;
 				}
 				pieceMask = 0xE00000000000000L;

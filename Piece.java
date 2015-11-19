@@ -1,5 +1,4 @@
 public enum Piece {
-	EMPTY(-1),
 	WHITE_PAWN(0),
 	WHITE_ROOK(1),
 	WHITE_KNIGHT(2),
@@ -11,7 +10,8 @@ public enum Piece {
 	BLACK_KNIGHT(8),
 	BLACK_BISHOP(9),
 	BLACK_QUEEN(10),
-	BLACK_KING(11);
+	BLACK_KING(11),
+	EMPTY(12);
 
 	private static final Piece[] valueIndexedEnums = Piece.values();
 	public final int intValue;

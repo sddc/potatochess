@@ -23,32 +23,32 @@ public class MoveGen {
 		return (int)(63L - Long.numberOfLeadingZeros(x));
 	}
 
-	public static long genSlidingPieceMoves(int piece, int square, long allPieces, long sidePieces) {
+	public static long genSlidingPieceMoves(Piece piece, Square square, long allPieces, long sidePieces) {
 		long moves = 0x0000000000000000L;
 		long m;
 		int blockBit;
 		ArrayList<Mask> masks = new ArrayList<Mask>();
 
 		switch(piece) {
-			case Board.WHITE_BISHOP:
-			case Board.BLACK_BISHOP:
-				masks.add(new Mask(plus7Mask[square], 7));
-				masks.add(new Mask(minus7Mask[square], -7));
-				masks.add(new Mask(plus9Mask[square], 9));
-				masks.add(new Mask(minus9Mask[square], -9));
+			case WHITE_BISHOP:
+			case BLACK_BISHOP:
+				masks.add(new Mask(plus7Mask[square.intValue], 7));
+				masks.add(new Mask(minus7Mask[square.intValue], -7));
+				masks.add(new Mask(plus9Mask[square.intValue], 9));
+				masks.add(new Mask(minus9Mask[square.intValue], -9));
 				break;
-			case Board.WHITE_QUEEN:
-			case Board.BLACK_QUEEN:
-				masks.add(new Mask(plus7Mask[square], 7));
-				masks.add(new Mask(minus7Mask[square], -7));
-				masks.add(new Mask(plus9Mask[square], 9));
-				masks.add(new Mask(minus9Mask[square], -9));
-			case Board.WHITE_ROOK:
-			case Board.BLACK_ROOK:
-				masks.add(new Mask(plus1Mask[square], 1));
-				masks.add(new Mask(minus1Mask[square], -1));
-				masks.add(new Mask(plus8Mask[square], 8));
-				masks.add(new Mask(minus8Mask[square], -8));
+			case WHITE_QUEEN:
+			case BLACK_QUEEN:
+				masks.add(new Mask(plus7Mask[square.intValue], 7));
+				masks.add(new Mask(minus7Mask[square.intValue], -7));
+				masks.add(new Mask(plus9Mask[square.intValue], 9));
+				masks.add(new Mask(minus9Mask[square.intValue], -9));
+			case WHITE_ROOK:
+			case BLACK_ROOK:
+				masks.add(new Mask(plus1Mask[square.intValue], 1));
+				masks.add(new Mask(minus1Mask[square.intValue], -1));
+				masks.add(new Mask(plus8Mask[square.intValue], 8));
+				masks.add(new Mask(minus8Mask[square.intValue], -8));
 				break;
 			default:
 				break;

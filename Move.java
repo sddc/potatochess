@@ -1,18 +1,7 @@
-// public class Move implements Comparable<Move> {
-public class Move {
-/*
-	public static final String[] squareNames = {
-		"a1", "b1", "c1", "d1", "e1", "f1", "g1", "h1",
-		"a2", "b2", "c2", "d2", "e2", "f2", "g2", "h2", 
-		"a3", "b3", "c3", "d3", "e3", "f3", "g3", "h3", 
-		"a4", "b4", "c4", "d4", "e4", "f4", "g4", "h4", 
-		"a5", "b5", "c5", "d5", "e5", "f5", "g5", "h5", 
-		"a6", "b6", "c6", "d6", "e6", "f6", "g6", "h6", 
-		"a7", "b7", "c7", "d7", "e7", "f7", "g7", "h7", 
-		"a8", "b8", "c8", "d8", "e8", "f8", "g8", "h8" 
-	};
-*/
+import java.util.HashMap;
+import java.util.Map;
 
+public class Move implements Comparable<Move> {
 	/* Move Encoding
 	 * All flags:
 	 * 	1: true
@@ -38,40 +27,37 @@ public class Move {
 	 */
 	private int move = 0;
 
-	public Move(Square from, Square to) {
+	public Move(Square from, Square to, Piece type) {
+		// to square
 		move |= to.intValue;
 		move = move << 6;
+		// from square
 		move |= from.intValue;
-	}
-
-	public Square getFromSquare() {
-		return Square.intToEnum(move & 0x3F);
-	}
-
-	public Square getToSquare() {
-		return Square.intToEnum((move & 0xFC0) >>> 6);
-	}
-
-	/////////////////////////////////////
-	public void setPieceType(Piece type) {
+		// piece type
 		move |= (type.intValue << 12);
 	}
 
+	public Square getFromSquare() {
+		return Square.toEnum(move & 0x3F);
+	}
+
+	public Square getToSquare() {
+		return Square.toEnum((move & 0xFC0) >>> 6);
+	}
+
 	public Piece getPieceType() {
-		return Piece.intToEnum((move & 0xF000) >>> 12);
+		return Piece.toEnum((move & 0xF000) >>> 12);
 	}
 
 	public void setCapturePieceType(Piece type) {
-		setFlag(Flag.CAPTURE);
 		move |= (type.intValue << 16);
 	}
 
 	public Piece getCapturePieceType() {
-		return Piece.intToEnum((move & 0xF0000) >>> 16);
+		return Piece.toEnum((move & 0xF0000) >>> 16);
 	}
 
 	public void setCastleType(boolean squares) {
-		setFlag(Flag.CASTLE);
 		if(squares) {
 			move |= 0x8000000;
 		}
@@ -86,16 +72,12 @@ public class Move {
 	}
 
 	public void setPromotionType(Piece type) {
-		setFlag(Flag.PROMOTION);
 		move |= (type.intValue << 28);
 	}
 
 	public Piece getPromotionType() {
-		return Piece.intToEnum((move & 0x30000000) >>> 28);
+		return Piece.toEnum((move & 0xF0000000) >>> 28);
 	}
-	//
-	//
-	/////////////////////////////////////
 
 	public boolean getFlag(Flag flag) {
 		int mask = getFlagMask(flag);
@@ -143,15 +125,41 @@ public class Move {
 		return mask;
 	}
 
-
-
-/*
+	@Override
 	public String toString() {
-		return squareNames[fromSquare] + squareNames[toSquare];
+		StringBuilder output = new StringBuilder();
+		output.append(getFromSquare().toString());
+		output.append(getToSquare().toString());
+		
+		if(getFlag(Flag.PROMOTION)) {
+			switch(getPromotionType()) {
+				case WHITE_QUEEN:
+				case BLACK_QUEEN:
+					output.append("Q");
+					break;
+				case WHITE_ROOK:
+				case BLACK_ROOK:
+					output.append("R");
+					break;
+				case WHITE_KNIGHT:
+				case BLACK_KNIGHT:
+					output.append("N");
+					break;
+				case WHITE_BISHOP:
+				case BLACK_BISHOP:
+					output.append("B");
+					break;
+				default:
+					break;
+
+			}
+		}
+		return output.toString();
 	}
 
+	@Override
 	public int compareTo(Move m) {
 		return toString().compareTo(m.toString());
 	}
-*/
+
 }

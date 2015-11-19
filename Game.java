@@ -43,6 +43,10 @@ public class Game {
 					} else {
 						System.out.println("Active color: Black (lowercase)");
 					}
+					if(chessboard.lastMoveDPP()) {
+						System.out.println("Last move double pawn push.");
+						System.out.println("en passant target square: " + chessboard.getEpTargetSquare().toString());
+					}
 					break;
 				case "move":
 					if(command.length == 2) {
@@ -51,7 +55,7 @@ public class Game {
 
 							for(Move m : moves) {
 								if(m.toString().equals(command[1])) {
-									chessboard.move(activeColor, m.fromSquare, m.toSquare);
+									chessboard.move(activeColor, m);
 									activeColor = chessboard.toggleActiveColor();
 									moves = genValidMoves(activeColor);
 									foundMove = true;
@@ -83,7 +87,7 @@ public class Game {
 					}
 					break;
 				case "perft":
-					System.out.println(perft(activeColor, Integer.parseInt(command[1])));
+					System.out.println(perft(activeColor, Integer.parseInt("nodes: " + command[1])));
 					break;
 				case "divide":
 					divide(activeColor, Integer.parseInt(command[1]), true);
@@ -111,7 +115,7 @@ public class Game {
 
 		ArrayList<Move> moves = genValidMoves(side);
 		for(Move m : moves) {
-			chessboard.move(side, m.fromSquare, m.toSquare);
+			chessboard.move(side, m);
 			Nodes += perft(!side, depth-1);
 			chessboard.undoMove(side);
 		}
@@ -131,7 +135,7 @@ public class Game {
 
 		ArrayList<Move> moves = genValidMoves(side);
 		for(Move m : moves) {
-			chessboard.move(side, m.fromSquare, m.toSquare);
+			chessboard.move(side, m);
 			Nodes += perft(!side, depth-1);
 			chessboard.undoMove(side);
 
@@ -152,123 +156,229 @@ public class Game {
 
 	private long genAttackSquares(boolean side) {
 		long attacks = 0L;
-		int rook;
-		int bishop;
-		int queen;
+		Piece rook;
+		Piece bishop;
+		Piece queen;
 
 		if(side == Board.WHITE) {
-			rook = Board.WHITE_ROOK;
-			bishop = Board.WHITE_BISHOP;
-			queen = Board.WHITE_QUEEN;
+			rook = Piece.WHITE_ROOK;
+			bishop = Piece.WHITE_BISHOP;
+			queen = Piece.WHITE_QUEEN;
 		} else {
-			rook = Board.BLACK_ROOK;
-			bishop = Board.BLACK_BISHOP;
-			queen = Board.BLACK_QUEEN;
+			rook = Piece.BLACK_ROOK;
+			bishop = Piece.BLACK_BISHOP;
+			queen = Piece.BLACK_QUEEN;
 		}
 
 		attacks |= MoveGen.genPawnAttack(side, chessboard.getPawns(side), chessboard.getSidePieces(side));
 
-		for(int i : Board.get1BitIndexes(chessboard.getRooks(side))) {
+		for(Square i : Board.get1BitIndexes(chessboard.getRooks(side))) {
 			attacks |= MoveGen.genSlidingPieceMoves(rook, i, chessboard.getAllPieces(), chessboard.getSidePieces(side));
 		}
 
-		for(int i : Board.get1BitIndexes(chessboard.getBishops(side))) {
+		for(Square i : Board.get1BitIndexes(chessboard.getBishops(side))) {
 			attacks |= MoveGen.genSlidingPieceMoves(bishop, i, chessboard.getAllPieces(), chessboard.getSidePieces(side));
 		}
 
-		for(int i : Board.get1BitIndexes(chessboard.getQueen(side))) {
+		for(Square i : Board.get1BitIndexes(chessboard.getQueen(side))) {
 			attacks |= MoveGen.genSlidingPieceMoves(queen, i, chessboard.getAllPieces(), chessboard.getSidePieces(side));
 		}
 
-		for(int i : Board.get1BitIndexes(chessboard.getKnights(side))) {
-			attacks |= MoveGen.knightMoves[i] & ~chessboard.getSidePieces(side);
+		for(Square i : Board.get1BitIndexes(chessboard.getKnights(side))) {
+			attacks |= MoveGen.knightMoves[i.intValue] & ~chessboard.getSidePieces(side);
 		}
 
-		for(int i : Board.get1BitIndexes(chessboard.getKing(side))) {
-			attacks |= MoveGen.kingMoves[i] & ~chessboard.getSidePieces(side);
+		for(Square i : Board.get1BitIndexes(chessboard.getKing(side))) {
+			attacks |= MoveGen.kingMoves[i.intValue] & ~chessboard.getSidePieces(side);
 		}
 		return attacks;
 	}
 
 	private ArrayList<Move> genValidMoves(boolean side) {
 		long j;
-		long pawnAttack;
-		int rook;
-		int bishop;
-		int queen;
+		long opponentPieces;
+		Piece pawn, rook, knight, bishop, queen, king;
 		ArrayList<Move> moves = new ArrayList<Move>();
 		Move m;
+		Piece type;
+		boolean epCapture = false;
+		Square epCaptureSquare = null;
 
 		if(side == Board.WHITE) {
-			rook = Board.WHITE_ROOK;
-			bishop = Board.WHITE_BISHOP;
-			queen = Board.WHITE_QUEEN;
+			pawn = Piece.WHITE_PAWN;
+			rook = Piece.WHITE_ROOK;
+			knight = Piece.WHITE_KNIGHT;
+			bishop = Piece.WHITE_BISHOP;
+			queen = Piece.WHITE_QUEEN;
+			king = Piece.WHITE_KING;
 		} else {
-			rook = Board.BLACK_ROOK;
-			bishop = Board.BLACK_BISHOP;
-			queen = Board.BLACK_QUEEN;
+			pawn = Piece.BLACK_PAWN;
+			rook = Piece.BLACK_ROOK;
+			knight = Piece.BLACK_KNIGHT;
+			bishop = Piece.BLACK_BISHOP;
+			queen = Piece.BLACK_QUEEN;
+			king = Piece.BLACK_KING;
 		}
 
 		if(chessboard.lastMoveDPP()) {
-			pawnAttack = Board.get1BitMask(chessboard.getBehindSquare());
-			pawnAttack |= chessboard.getSidePieces(!side);
+			epCapture = true;
+			epCaptureSquare = chessboard.getEpTargetSquare();
+			// add en passant square
+			opponentPieces = chessboard.getSidePieces(!side);
+			opponentPieces |= Board.get1BitMask(epCaptureSquare);
 		} else {
-			pawnAttack = chessboard.getSidePieces(!side);
+			opponentPieces = chessboard.getSidePieces(!side);
 		}
 
-		for(int i : Board.get1BitIndexes(chessboard.getPawns(side))) {
-			j = pawnAttack & MoveGen.genPawnAttack(side, Board.get1BitMask(i), chessboard.getSidePieces(side));
-			for(int k : Board.get1BitIndexes(j)) {
-				validateAndAdd(side, i, k, moves);
+		// pawn attack
+		for(Square i : Board.get1BitIndexes(chessboard.getPawns(side))) {
+			j = opponentPieces & MoveGen.genPawnAttack(side, Board.get1BitMask(i), chessboard.getSidePieces(side));
+			for(Square k : Board.get1BitIndexes(j)) {
+				m = new Move(i, k, pawn);
+
+				if(epCapture && (k == epCaptureSquare)) {
+					m.setFlag(Flag.EP_CAPTURE);
+					if(side == Board.WHITE) {
+						m.setCapturePieceType(Piece.BLACK_PAWN);
+					} else {
+						m.setCapturePieceType(Piece.WHITE_PAWN);
+					}
+					validateAndAdd(side, m, moves);
+				} else {
+					if(((Board.get1BitMask(k) & Board.maskRank1) != 0) || 
+					((Board.get1BitMask(k) & Board.maskRank8) != 0)) {
+						Move[] promotion ={
+							new Move(i, k, pawn),
+							new Move(i, k, pawn),
+							new Move(i, k, pawn),
+							new Move(i, k, pawn)
+						};
+						promotion[0].setPromotionType(queen);
+						promotion[1].setPromotionType(rook);
+						promotion[2].setPromotionType(knight);
+						promotion[3].setPromotionType(bishop);
+						for(Move p : promotion) {
+							type = chessboard.getPieceType(k);
+							p.setCapturePieceType(type);
+							p.setFlag(Flag.CAPTURE);
+							p.setFlag(Flag.PROMOTION);
+							validateAndAdd(side, p, moves);
+						}
+					} else {
+						type = chessboard.getPieceType(k);
+						m.setFlag(Flag.CAPTURE);
+						m.setCapturePieceType(type);
+						validateAndAdd(side, m, moves);
+					}
+				}
+
 			}
 		}
 
-		for(int i : Board.get1BitIndexes(chessboard.getPawns(side))) {
+		// pawn push
+		for(Square i : Board.get1BitIndexes(chessboard.getPawns(side))) {
 			j = MoveGen.genPawnPush(side, Board.get1BitMask(i), chessboard.getAllPieces());
-			for(int k : Board.get1BitIndexes(j)) {
-				validateAndAdd(side, i, k, moves);
+			for(Square k : Board.get1BitIndexes(j)) {
+				if(((Board.get1BitMask(k) & Board.maskRank1) != 0) || 
+				((Board.get1BitMask(k) & Board.maskRank8) != 0)) {
+					Move[] promotion ={
+						new Move(i, k, pawn),
+						new Move(i, k, pawn),
+						new Move(i, k, pawn),
+						new Move(i, k, pawn)
+					};
+					promotion[0].setPromotionType(queen);
+					promotion[1].setPromotionType(rook);
+					promotion[2].setPromotionType(knight);
+					promotion[3].setPromotionType(bishop);
+					for(Move p : promotion) {
+						p.setFlag(Flag.PROMOTION);
+						validateAndAdd(side, p, moves);
+					}
+				} else {
+					m = new Move(i, k, pawn);
+					validateAndAdd(side, m, moves);
+				}
 			}
 		}
 
-		for(int i : Board.get1BitIndexes(chessboard.getPawns(side))) {
+		// double pawn push
+		for(Square i : Board.get1BitIndexes(chessboard.getPawns(side))) {
 			j = MoveGen.genDoublePawnPush(side, Board.get1BitMask(i), chessboard.getAllPieces());
-			for(int k : Board.get1BitIndexes(j)) {
-				validateAndAdd(side, i, k, moves);
+			for(Square k : Board.get1BitIndexes(j)) {
+				m = new Move(i, k, pawn);
+				m.setFlag(Flag.DOUBLE_PAWN_PUSH);
+				validateAndAdd(side, m, moves);
 			}
 		}
 
-		for(int i : Board.get1BitIndexes(chessboard.getRooks(side))) {
+		// rooks
+		for(Square i : Board.get1BitIndexes(chessboard.getRooks(side))) {
 			j = MoveGen.genSlidingPieceMoves(rook, i, chessboard.getAllPieces(), chessboard.getSidePieces(side));
-			for(int k : Board.get1BitIndexes(j)) {
-				validateAndAdd(side, i, k, moves);
+			for(Square k : Board.get1BitIndexes(j)) {
+				m = new Move(i, k, rook);
+				type = chessboard.getPieceType(k);
+				if(type != Piece.EMPTY) {
+					m.setFlag(Flag.CAPTURE);
+					m.setCapturePieceType(type);
+				}
+				validateAndAdd(side, m, moves);
 			}
 		}
 
-		for(int i : Board.get1BitIndexes(chessboard.getBishops(side))) {
+		// bishops
+		for(Square i : Board.get1BitIndexes(chessboard.getBishops(side))) {
 			j = MoveGen.genSlidingPieceMoves(bishop, i, chessboard.getAllPieces(), chessboard.getSidePieces(side));
-			for(int k : Board.get1BitIndexes(j)) {
-				validateAndAdd(side, i, k, moves);
+			for(Square k : Board.get1BitIndexes(j)) {
+				m = new Move(i, k, bishop);
+				type = chessboard.getPieceType(k);
+				if(type != Piece.EMPTY) {
+					m.setFlag(Flag.CAPTURE);
+					m.setCapturePieceType(type);
+				}
+				validateAndAdd(side, m, moves);
 			}
 		}
 
-		for(int i : Board.get1BitIndexes(chessboard.getQueen(side))) {
+		// queen
+		for(Square i : Board.get1BitIndexes(chessboard.getQueen(side))) {
 			j = MoveGen.genSlidingPieceMoves(queen, i, chessboard.getAllPieces(), chessboard.getSidePieces(side));
-			for(int k : Board.get1BitIndexes(j)) {
-				validateAndAdd(side, i, k, moves);
+			for(Square k : Board.get1BitIndexes(j)) {
+				m = new Move(i, k, queen);
+				type = chessboard.getPieceType(k);
+				if(type != Piece.EMPTY) {
+					m.setFlag(Flag.CAPTURE);
+					m.setCapturePieceType(type);
+				}
+				validateAndAdd(side, m, moves);
 			}
 		}
 
-		for(int i : Board.get1BitIndexes(chessboard.getKnights(side))) {
-			j = MoveGen.knightMoves[i] & ~chessboard.getSidePieces(side);
-			for(int k : Board.get1BitIndexes(j)) {
-				validateAndAdd(side, i, k, moves);
+		// knight
+		for(Square i : Board.get1BitIndexes(chessboard.getKnights(side))) {
+			j = MoveGen.knightMoves[i.intValue] & ~chessboard.getSidePieces(side);
+			for(Square k : Board.get1BitIndexes(j)) {
+				m = new Move(i, k, knight);
+				type = chessboard.getPieceType(k);
+				if(type != Piece.EMPTY) {
+					m.setFlag(Flag.CAPTURE);
+					m.setCapturePieceType(type);
+				}
+				validateAndAdd(side, m, moves);
 			}
 		}
 
-		for(int i : Board.get1BitIndexes(chessboard.getKing(side))) {
-			j = MoveGen.kingMoves[i] & ~chessboard.getSidePieces(side);
-			for(int k : Board.get1BitIndexes(j)) {
-				validateAndAdd(side, i, k, moves);
+		// king
+		for(Square i : Board.get1BitIndexes(chessboard.getKing(side))) {
+			j = MoveGen.kingMoves[i.intValue] & ~chessboard.getSidePieces(side);
+			for(Square k : Board.get1BitIndexes(j)) {
+				m = new Move(i, k, king);
+				type = chessboard.getPieceType(k);
+				if(type != Piece.EMPTY) {
+					m.setFlag(Flag.CAPTURE);
+					m.setCapturePieceType(type);
+				}
+				validateAndAdd(side, m, moves);
 			}
 		}
 		genCastlingMoves(side, moves);
@@ -278,6 +388,7 @@ public class Game {
 
 	private void genCastlingMoves(boolean side, ArrayList<Move> moves) {
 		long opponentAttacks = genAttackSquares(!side);
+		Move m;
 		// check if king in check
 		if(kingInCheck(side, opponentAttacks)) {
 			return;
@@ -286,29 +397,41 @@ public class Game {
 		// check if kingside castling is available
 		if(chessboard.castlingAvailable(side, Board.KINGSIDE, opponentAttacks)) {
 			if(side == Board.WHITE) {
-				moves.add(new Move(Board.E1, Board.G1));
+				m = new Move(Square.E1, Square.G1, Piece.WHITE_KING);
+				m.setFlag(Flag.CASTLE);
+				m.setCastleType(Board.KINGSIDE);
+				moves.add(m);
 			} else {
-				moves.add(new Move(Board.E8, Board.G8));
+				m = new Move(Square.E8, Square.G8, Piece.BLACK_KING);
+				m.setFlag(Flag.CASTLE);
+				m.setCastleType(Board.KINGSIDE);
+				moves.add(m);
 			}
 		}
 
 		// check if queenside castling is available
 		if(chessboard.castlingAvailable(side, Board.QUEENSIDE, opponentAttacks)) {
 			if(side == Board.WHITE) {
-				moves.add(new Move(Board.E1, Board.C1));
+				m = new Move(Square.E1, Square.C1, Piece.WHITE_KING);
+				m.setFlag(Flag.CASTLE);
+				m.setCastleType(Board.QUEENSIDE);
+				moves.add(m);
 			} else {
-				moves.add(new Move(Board.E8, Board.C8));
+				m = new Move(Square.E8, Square.C8, Piece.BLACK_KING);
+				m.setFlag(Flag.CASTLE);
+				m.setCastleType(Board.QUEENSIDE);
+				moves.add(m);
 			}
 		}
 	}
 
 
-	private void validateAndAdd(boolean side, int fromSquare, int toSquare, ArrayList<Move> moves) {
+	private void validateAndAdd(boolean side, Move move, ArrayList<Move> moves) {
 		// make move then check if king in check
 		// if not, add to moves then undo
-		chessboard.move(side, fromSquare, toSquare);
+		chessboard.move(side, move);
 		if(!kingInCheck(side, genAttackSquares(!side))) {
-			moves.add(new Move(fromSquare, toSquare));
+			moves.add(move);
 		}
 		chessboard.undoMove(side);
 	}
@@ -325,11 +448,11 @@ public class Game {
 		long[] bitboards = new long[12];
 		Arrays.fill(bitboards, 0L);
 
-		boolean[] moved = new boolean[6];
-		Arrays.fill(moved, true);
+		boolean[] castleStatus = new boolean[4];
+		Arrays.fill(castleStatus, false);
 
 		boolean lastMoveDoublePawnPush = false;
-		int behindSquare = Board.EMPTY;
+		Square epTargetSquare = null;
 		boolean activeColor = Board.WHITE;
 
 		String[] fields = position.split(" ");
@@ -399,20 +522,16 @@ public class Game {
 			for(char piece : fields[2].toCharArray()) {
 				switch(piece) {
 					case 'K':
-						moved[0] = false;
-						moved[2] = false;
+						castleStatus[0] = true;
 						break;
 					case 'Q':
-						moved[3] = false;
-						moved[0] = false;
+						castleStatus[1] = true;
 						break;
 					case 'k':
-						moved[4] = false;
-						moved[1] = false;
+						castleStatus[2] = true;
 						break;
 					case 'q':
-						moved[5] = false;
-						moved[1] = false;
+						castleStatus[3] = true;
 						break;
 					default:
 						break;
@@ -424,14 +543,10 @@ public class Game {
 
 		if(fields[3].matches("^[a-h][1-8]$|^-$")) {
 			if(fields[3].equals("-")) {
-				// do nothing, behindSquare and lastMoveDoublePawnPush already initialized to correct values
+				// do nothing, epTargetSquare and lastMoveDoublePawnPush already initialized to correct values
 			} else {
-				for(int i = 0; i < Move.squareNames.length; i++) {
-					if(Move.squareNames[i].equals(fields[3])) {
-						behindSquare = i;
-						lastMoveDoublePawnPush = true;
-					}
-				}
+				epTargetSquare = Square.stringToEnum(fields[3]);
+				lastMoveDoublePawnPush = true;
 			}
 		} else {
 			throw new IllegalArgumentException("'" + fields[3] + "' is not a valid en passant target square");
@@ -439,7 +554,7 @@ public class Game {
 
 		// todo: halfmove clock, fullmove number
 
-		return new Board(bitboards, moved, lastMoveDoublePawnPush, behindSquare, activeColor);
+		return new Board(bitboards, castleStatus, lastMoveDoublePawnPush, epTargetSquare, activeColor);
 	}
 		
 }
