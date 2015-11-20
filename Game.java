@@ -87,7 +87,7 @@ public class Game {
 					}
 					break;
 				case "perft":
-					System.out.println(perft(activeColor, Integer.parseInt("nodes: " + command[1])));
+					System.out.println("nodes: " + perft(activeColor, Integer.parseInt(command[1])));
 					break;
 				case "divide":
 					divide(activeColor, Integer.parseInt(command[1]), true);
