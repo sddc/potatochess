@@ -1,4 +1,6 @@
 public class KingMoveGen extends MoveGen {
+	public static final boolean KINGSIDE = true;
+	public static final boolean QUEENSIDE = false;
 	public static final long[] kingMoves = genKingMoves();
 	
 	/*
@@ -33,5 +35,53 @@ public class KingMoveGen extends MoveGen {
 		}
 
 		return genMoves;
+	}
+
+	public boolean castlingAvailable(boolean side, boolean squares, long attacks) {
+		// side: true = white, false = black
+		// squares: true = kingside, false = queenside
+		long pieceMask;
+		long attackMask;
+		if(side == Board.WHITE) {
+			if(squares == Board.KINGSIDE) {
+				// check if kingside castle available
+				if(!castleStatus[0]) {
+					return false;
+				}
+				pieceMask = 0x60L;
+				attackMask = pieceMask;
+			} else {
+				// check if queenside castle available
+				if(!castleStatus[1]) {
+					return false;
+				}
+				pieceMask = 0xEL;
+				attackMask = 0xCL;
+			}
+		} else {
+			if(squares == Board.KINGSIDE) {
+				// check if kingside castle available
+				if(!castleStatus[2]) {
+					return false;
+				}
+				pieceMask = 0x6000000000000000L;
+				attackMask = pieceMask;
+			} else {
+				// check if queenside castle available
+				if(!castleStatus[3]) {
+					return false;
+				}
+				pieceMask = 0xE00000000000000L;
+				attackMask = 0xC00000000000000L;
+			}
+		}
+
+		// check if any pieces between king and rook. also check if opponent
+		// is attacking squares king passes or ends up on
+		if(((pieceMask & getAllPieces()) == 0L) && ((attackMask & attacks) == 0L)) {
+			return true;
+		} else {
+			return false;
+		}
 	}
 }

@@ -5,8 +5,6 @@ import java.util.ArrayDeque;
 public class Board {
 	public static final boolean WHITE = true;
 	public static final boolean BLACK = false;
-	public static final boolean KINGSIDE = true;
-	public static final boolean QUEENSIDE = false;
 	
 	/* castleStatus array 
 	 * 0 = white kingside not rook moved?
@@ -31,20 +29,6 @@ public class Board {
 	private long whitePieces;
 	private long blackPieces;
 	
-	public static final long clearAFile = 0xFEFEFEFEFEFEFEFEL;
-	public static final long clearBFile = 0xFDFDFDFDFDFDFDFDL;
-	public static final long clearGFile = 0xBFBFBFBFBFBFBFBFL;
-	public static final long clearHFile = 0x7F7F7F7F7F7F7F7FL;
-
-	public static final long maskRank1 = 0x00000000000000FFL;
-	public static final long maskRank2 = 0x000000000000FF00L;
-	public static final long maskRank3 = 0x0000000000FF0000L;
-	public static final long maskRank4 = 0x00000000FF000000L;
-	public static final long maskRank5 = 0x000000FF00000000L;
-	public static final long maskRank6 = 0x0000FF0000000000L;
-	public static final long maskRank7 = 0x00FF000000000000L;
-	public static final long maskRank8 = 0xFF00000000000000L;
-
 	private Deque<PreviousMove> previousMoves = new ArrayDeque<PreviousMove>();
 
 	public Board(long[] bitboards, boolean[] castleStatus, boolean lastMoveDoublePawnPush, Square epTargetSquare, boolean activeColor) {
@@ -104,54 +88,6 @@ public class Board {
 	public long getEmptySquares() {
 		return ~getAllPieces();
 	}
-
-	public long getPawns(boolean side) {
-		if(side == Board.WHITE) {
-			return bitboards[0];
-		} else {
-			return bitboards[6];
-		}
-	}
-
-	public long getRooks(boolean side) {
-		if(side == Board.WHITE) {
-			return bitboards[1];
-		} else {
-			return bitboards[7];
-		}
-	}
-
-	public long getKnights(boolean side) {
-		if(side == Board.WHITE) {
-			return bitboards[2];
-		} else {
-			return bitboards[8];
-		}
-	}
-
-	public long getBishops(boolean side) {
-		if(side == Board.WHITE) {
-			return bitboards[3];
-		} else {
-			return bitboards[9];
-		}
-	}
-
-	public long getQueen(boolean side) {
-		if(side == Board.WHITE) {
-			return bitboards[4];
-		} else {
-			return bitboards[10];
-		}
-	}
-
-	public long getKing(boolean side) {
-		if(side == Board.WHITE) {
-			return bitboards[5];
-		} else {
-			return bitboards[11];
-		}
-	}
 	
 	private void printPiece(Piece type) {
 		switch(type) {
@@ -201,31 +137,6 @@ public class Board {
 			System.out.println("\n   +---+---+---+---+---+---+---+---+");
 		}
 		System.out.println("     A   B   C   D   E   F   G   H");
-	}
-
-	public static ArrayList<Square> get1BitIndexes(long x) {
-		long compare = 0x0000000000000001L;
-		int index = 0;
-		ArrayList<Square> indexes = new ArrayList<Square>();
-
-		while(x != 0) {
-			if((x & compare) == 1L) {
-				indexes.add(Square.toEnum(index));
-			}
-			x = x >>> 1;
-			index++;
-		}
-		
-		return indexes;
-	}
-
-	public static long get1BitMask(Square s) {
-		long mask = 0x0000000000000001L;
-		if(s.intValue == 0) {
-			return mask;
-		} else {
-			return mask << s.intValue;
-		}
 	}
 
 	public Piece getPieceType(Square s) {
@@ -433,54 +344,6 @@ public class Board {
 
 			// remove bit from chosen piece
 			modify(m.getPromotionType(), toMask);
-		}
-	}
-
-	public boolean castlingAvailable(boolean side, boolean squares, long attacks) {
-		// side: true = white, false = black
-		// squares: true = kingside, false = queenside
-		long pieceMask;
-		long attackMask;
-		if(side == Board.WHITE) {
-			if(squares == Board.KINGSIDE) {
-				// check if kingside castle available
-				if(!castleStatus[0]) {
-					return false;
-				}
-				pieceMask = 0x60L;
-				attackMask = pieceMask;
-			} else {
-				// check if queenside castle available
-				if(!castleStatus[1]) {
-					return false;
-				}
-				pieceMask = 0xEL;
-				attackMask = 0xCL;
-			}
-		} else {
-			if(squares == Board.KINGSIDE) {
-				// check if kingside castle available
-				if(!castleStatus[2]) {
-					return false;
-				}
-				pieceMask = 0x6000000000000000L;
-				attackMask = pieceMask;
-			} else {
-				// check if queenside castle available
-				if(!castleStatus[3]) {
-					return false;
-				}
-				pieceMask = 0xE00000000000000L;
-				attackMask = 0xC00000000000000L;
-			}
-		}
-
-		// check if any pieces between king and rook. also check if opponent
-		// is attacking squares king passes or ends up on
-		if(((pieceMask & getAllPieces()) == 0L) && ((attackMask & attacks) == 0L)) {
-			return true;
-		} else {
-			return false;
 		}
 	}
 }
