@@ -1,8 +1,11 @@
 public abstract class MoveGen {
-	public static final long clearAFile = 0xFEFEFEFEFEFEFEFEL;
-	public static final long clearBFile = 0xFDFDFDFDFDFDFDFDL;
-	public static final long clearGFile = 0xBFBFBFBFBFBFBFBFL;
-	public static final long clearHFile = 0x7F7F7F7F7F7F7F7FL;
+	public static final long clearFileA = 0xFEFEFEFEFEFEFEFEL;
+	public static final long clearFileB = 0xFDFDFDFDFDFDFDFDL;
+	public static final long clearFileG = 0xBFBFBFBFBFBFBFBFL;
+	public static final long clearFileH = 0x7F7F7F7F7F7F7F7FL;
+
+	public static final long clearRank1 = 0xFFFFFFFFFFFFFF00L;
+	public static final long clearRank8 = 0xFFFFFFFFFFFFFFL;
 
 	public static final long maskRank1 = 0x00000000000000FFL;
 	public static final long maskRank2 = 0x000000000000FF00L;
@@ -13,20 +16,29 @@ public abstract class MoveGen {
 	public static final long maskRank7 = 0x00FF000000000000L;
 	public static final long maskRank8 = 0xFF00000000000000L;
 
-	public static ArrayList<Square> get1BitIndexes(long x) {
-		long compare = 0x0000000000000001L;
-		int index = 0;
-		ArrayList<Square> indexes = new ArrayList<Square>();
+	public static final long maskFileA = 0x101010101010101L;
+	public static final long maskFileH = 0x8080808080808080L;
 
-		while(x != 0) {
-			if((x & compare) == 1L) {
-				indexes.add(Square.toEnum(index));
+	private Board board;
+	private boolean side;
+
+	public MoveGen(Board board, boolean side) {
+		this.board = board;
+		this.side = side;
+	}
+	
+	public static int[] getOccupancyIndexes(long occupancy) {
+		long mask = 1L;
+		int[] occupancyIndexes = new int[Long.bitCount(occupancy)];
+		int index = 0;
+
+		for(int i = 0; i < 64; i++) {
+			if((occupancy & mask) != 0L) {
+				occupancyIndexes[index++] = i;
 			}
-			x = x >>> 1;
-			index++;
+			occupancy = occupancy >>> 1;
 		}
-		
-		return indexes;
+		return occupancyIndexes;
 	}
 
 	public static long get1BitMask(Square s) {
