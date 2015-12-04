@@ -1,4 +1,9 @@
 public class KnightMoveGen extends MoveGen {
+	public ArrayList<Move> genMoves() {
+	}
+	 
+	public boolean isKingAttacked() {
+	}
 	public static final long[] knightMoves = genKnightMoves();
 
 	/*

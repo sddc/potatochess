@@ -21,10 +21,32 @@ public abstract class MoveGen {
 
 	private Board board;
 	private boolean side;
+	private Piece piece;
 
 	public MoveGen(Board board, boolean side) {
 		this.board = board;
 		this.side = side;
+	}
+
+	abstract public ArrayList<Move> genMoves();
+	abstract public boolean isKingAttacked();
+
+	private static boolean kingInCheck(Board board, boolean side) {
+		MoveGen moveGens = {
+			new PawnMoveGen(board, side),
+			new RookMoveGen(board, side),
+			new KnightMoveGen(board, side),
+			new BishopMoveGen(board, side),
+			new QueenMoveGen(board, side),
+			new KingMoveGen(board, side)
+		};
+
+		for(MoveGen mg : moveGens) {
+			if(mg.isKingAttacked()) {
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	public static int[] getOccupancyIndexes(long occupancy) {

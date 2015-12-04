@@ -1,6 +1,11 @@
 public class KingMoveGen extends MoveGen {
 	public static final boolean KINGSIDE = true;
 	public static final boolean QUEENSIDE = false;
+	public ArrayList<Move> genMoves() {
+	}
+	 
+	public boolean isKingAttacked() {
+	}
 	public static final long[] kingMoves = genKingMoves();
 	
 	/*

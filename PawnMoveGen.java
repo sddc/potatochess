@@ -1,4 +1,10 @@
 public class PawnMoveGen extends MoveGen {
+	public ArrayList<Move> genMoves() {
+	}
+	 
+	public boolean isKingAttacked() {
+	}
+
 	public static long genPawnPush(boolean side, long pawnPositions, long allPieces) {
 		// side:
 		// white = true
