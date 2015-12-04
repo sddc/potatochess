@@ -73,6 +73,10 @@ public class Board {
 		return result;
 	}
 
+	public long getPiece(Piece piece) {
+		return bitboards[piece.intValue];
+	}
+
 	public long getSidePieces(boolean side) {
 		if(side == Board.WHITE) {
 			return whitePieces;
