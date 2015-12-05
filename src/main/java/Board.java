@@ -73,8 +73,52 @@ public class Board {
 		return result;
 	}
 
-	public long getPiece(Piece piece) {
-		return bitboards[piece.intValue];
+	public long getPawnBitboard(boolean side) {
+		if(side) {
+			return bitboards[0];
+		} else {
+			return bitboards[6];
+		}
+	}
+
+	public long getRookBitboard(boolean side) {
+		if(side) {
+			return bitboards[1];
+		} else {
+			return bitboards[7];
+		}
+	}
+
+	public long getKnightBitboard(boolean side) {
+		if(side) {
+			return bitboards[2];
+		} else {
+			return bitboards[8];
+		}
+	}
+
+	public long getBishopBitboard(boolean side) {
+		if(side) {
+			return bitboards[3];
+		} else {
+			return bitboards[9];
+		}
+	}
+
+	public long getQueenBitboard(boolean side) {
+		if(side) {
+			return bitboards[4];
+		} else {
+			return bitboards[10];
+		}
+	}
+
+	public long getKingBitboard(boolean side) {
+		if(side) {
+			return bitboards[5];
+		} else {
+			return bitboards[11];
+		}
 	}
 
 	public long getSidePieces(boolean side) {
