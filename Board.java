@@ -125,7 +125,7 @@ public class Board {
 				break;
 		}
 	}
-
+/*
 	public void print() {
 		int rank = 8;
 		System.out.println("     A   B   C   D   E   F   G   H");
@@ -152,7 +152,7 @@ public class Board {
 		}
 		return Piece.EMPTY;
 	}
-
+*/
 	private void modify(Piece type, long modifier) {
 		// type selects which bitboard to modify
 		// modifier is bitmask or which bits to toggle
@@ -169,6 +169,7 @@ public class Board {
 	}
 
 	public void move(boolean side, Move m) {
+		/*
 		// assumes m is at least pseudo legal
 
 		// save move to undo
@@ -285,9 +286,11 @@ public class Board {
 		if(pieceType == Piece.BLACK_ROOK && fromSquare == Square.A8) {
 			castleStatus[3] = false;
 		}	
+		*/
 	}
 
 	public void undoMove(boolean side) {
+		/*
 		if(previousMoves.isEmpty()) {
 			return;
 		}
@@ -349,5 +352,6 @@ public class Board {
 			// remove bit from chosen piece
 			modify(m.getPromotionType(), toMask);
 		}
+		*/
 	}
 }

@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public abstract class SlidingMoveGen extends MoveGen {
 	private static final long[] rookOccupancyMasks = new long[64];
@@ -32,13 +33,13 @@ public abstract class SlidingMoveGen extends MoveGen {
 		super(board, side);
 	}
 
-	public static long getRookMoves(int squareIndex) {
+	public long getRookMoves(int squareIndex) {
 		long occupancy = board.getAllPieces() & rookOccupancyMasks[squareIndex];
 		int index = (int)((rookMagics[squareIndex] * occupancy) >>> rookShifts[squareIndex]);
 		return rookMoves[squareIndex][index];
 	}
 
-	public static long getBishopMoves(int squareIndex) {
+	public long getBishopMoves(int squareIndex) {
 		long occupancy = board.getAllPieces() & bishopOccupancyMasks[squareIndex];
 		int index = (int)((bishopMagics[squareIndex] * 0L) >>> bishopShifts[squareIndex]);
 		return bishopMoves[squareIndex][index];

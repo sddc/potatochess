@@ -1,8 +1,15 @@
+import java.util.ArrayList;
+
 public class PawnMoveGen extends MoveGen {
+	public PawnMoveGen(Board board, boolean side) {
+		super(board, side);
+	}
 	public ArrayList<Move> genMoves() {
+		return null;
 	}
 	 
 	public boolean isKingAttacked() {
+		return false;
 	}
 
 	public static long genPawnPush(boolean side, long pawnPositions, long allPieces) {
@@ -21,9 +28,9 @@ public class PawnMoveGen extends MoveGen {
 		// white = true
 		// black = false
 		if(side) {
-			return ~allPieces & ((Board.maskRank3 & genPawnPush(side, pawnPositions, allPieces)) << 8);
+			return ~allPieces & ((maskRank3 & genPawnPush(side, pawnPositions, allPieces)) << 8);
 		} else {
-			return ~allPieces & ((Board.maskRank6 & genPawnPush(side, pawnPositions, allPieces)) >>> 8);
+			return ~allPieces & ((maskRank6 & genPawnPush(side, pawnPositions, allPieces)) >>> 8);
 		}
 	}
 
@@ -32,11 +39,11 @@ public class PawnMoveGen extends MoveGen {
 		// white = true
 		// black = false
 		if(side) {
-			return ~sidePieces & (((Board.clearHFile & pawnPositions) << 9) |
-				((Board.clearAFile & pawnPositions) << 7));
+			return ~sidePieces & (((clearFileH & pawnPositions) << 9) |
+				((clearFileA & pawnPositions) << 7));
 		} else {
-			return ~sidePieces & (((Board.clearAFile & pawnPositions) >>> 9) |
-				((Board.clearHFile & pawnPositions) >>> 7));
+			return ~sidePieces & (((clearFileA & pawnPositions) >>> 9) |
+				((clearFileH & pawnPositions) >>> 7));
 		}
 	}
 }

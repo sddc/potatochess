@@ -1,3 +1,5 @@
+import java.util.ArrayList;
+
 public abstract class MoveGen {
 	public static final long clearFileA = 0xFEFEFEFEFEFEFEFEL;
 	public static final long clearFileB = 0xFDFDFDFDFDFDFDFDL;
@@ -19,9 +21,9 @@ public abstract class MoveGen {
 	public static final long maskFileA = 0x101010101010101L;
 	public static final long maskFileH = 0x8080808080808080L;
 
-	private Board board;
-	private boolean side;
-	private Piece piece;
+	protected Board board;
+	protected boolean side;
+	protected Piece piece;
 
 	public MoveGen(Board board, boolean side) {
 		this.board = board;
@@ -32,7 +34,7 @@ public abstract class MoveGen {
 	abstract public boolean isKingAttacked();
 
 	private static boolean kingInCheck(Board board, boolean side) {
-		MoveGen moveGens = {
+		MoveGen[] moveGens = {
 			new PawnMoveGen(board, side),
 			new RookMoveGen(board, side),
 			new KnightMoveGen(board, side),

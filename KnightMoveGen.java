@@ -1,8 +1,15 @@
+import java.util.ArrayList;
+
 public class KnightMoveGen extends MoveGen {
+	public KnightMoveGen(Board board, boolean side) {
+		super(board, side);
+	}
 	public ArrayList<Move> genMoves() {
+		return null;
 	}
 	 
 	public boolean isKingAttacked() {
+		return false;
 	}
 	public static final long[] knightMoves = genKnightMoves();
 
@@ -22,17 +29,17 @@ public class KnightMoveGen extends MoveGen {
 		long knightPos = 0x0000000000000001L;
 
 		for(int i = 0; i < 64; i++) {
-			long pos8 = (knightPos & Board.clearAFile & Board.clearBFile) << 6;
-			long pos7 = (knightPos & Board.clearAFile & Board.clearBFile) >>> 10;
+			long pos8 = (knightPos & clearFileA & clearFileB) << 6;
+			long pos7 = (knightPos & clearFileA & clearFileB) >>> 10;
 
-			long pos1 = (knightPos & Board.clearAFile) << 15;
-			long pos6 = (knightPos & Board.clearAFile) >>> 17;
+			long pos1 = (knightPos & clearFileA) << 15;
+			long pos6 = (knightPos & clearFileA) >>> 17;
 
-			long pos2 = (knightPos & Board.clearHFile) << 17;
-			long pos5 = (knightPos & Board.clearHFile) >>> 15;
+			long pos2 = (knightPos & clearFileH) << 17;
+			long pos5 = (knightPos & clearFileH) >>> 15;
 
-			long pos3 = (knightPos & Board.clearHFile & Board.clearGFile) << 10;
-			long pos4 = (knightPos & Board.clearHFile & Board.clearGFile) >>> 6;
+			long pos3 = (knightPos & clearFileH & clearFileG) << 10;
+			long pos4 = (knightPos & clearFileH & clearFileG) >>> 6;
 
 			genMoves[i] = pos1 | pos2 | pos3 | pos4 | pos5 | pos6 | pos7 | pos8;
 			knightPos = knightPos << 1;
