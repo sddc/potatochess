@@ -121,6 +121,10 @@ public class Board {
 		}
 	}
 
+	public long getPieceBitboard(Piece p) {
+		return bitboards[p.intValue];
+	}
+
 	public long getSidePieces(boolean side) {
 		if(side == Board.WHITE) {
 			return whitePieces;
@@ -186,9 +190,9 @@ public class Board {
 		}
 		System.out.println("     A   B   C   D   E   F   G   H");
 	}
-
+*/
 	public Piece getPieceType(Square s) {
-		long mask = get1BitMask(s);
+		long mask = 1L << s.intValue;
 		for(int i = 0; i < 12; i++ ) {
 			if((mask & bitboards[i]) != 0) {
 				return Piece.toEnum(i);
@@ -196,7 +200,7 @@ public class Board {
 		}
 		return Piece.EMPTY;
 	}
-*/
+
 	private void modify(Piece type, long modifier) {
 		// type selects which bitboard to modify
 		// modifier is bitmask or which bits to toggle
