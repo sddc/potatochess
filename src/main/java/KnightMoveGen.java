@@ -11,7 +11,7 @@ public class KnightMoveGen extends MoveGen {
 	}
 
 	@Override	
-	public long genMoveBitboard(boolean side) {
+	public long genMoveBitboard(boolean side, Square fromSquare) {
 		return 1L;
 	}
 
@@ -21,7 +21,7 @@ public class KnightMoveGen extends MoveGen {
 	}
 
 	@Override
-	public boolean isKingInCheck(boolean side) {
+	public boolean isPositionAttacked(boolean side, long position) {
 		return false;
 	}
 	 

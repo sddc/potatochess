@@ -66,7 +66,7 @@ public abstract class MoveGen {
 					move.setCapturePieceType(type);
 				}
 				
-				if(isValidMove(side, move)) {
+				if(isValidMove(side, move, board.getKingBitboard(side))) {
 					moves.add(move);
 				}
 			}
@@ -75,11 +75,11 @@ public abstract class MoveGen {
 		return moves;
 	}
 
-	public boolean isValidMove(boolean side, Move move) {
+	public boolean isValidMove(boolean side, Move move, long position) {
 		board.move(side, move);
 
 		for(MoveGen mg : moveGens) {
-			if(mg.isKingInCheck(side)) {
+			if(mg.isPositionAttacked(side, position)) {
 				return false;
 			}
 		}
@@ -90,7 +90,7 @@ public abstract class MoveGen {
 
 	abstract public long genMoveBitboard(boolean side, Square fromSquare);
 	abstract public Piece sidePiece(boolean side);
-	abstract public boolean isKingInCheck(boolean side);
+	abstract public boolean isPositionAttacked(boolean side, long position);
 
 	public static Square[] getOccupancyIndexes(long occupancy) {
 		Square[] occupancyIndexes = new Square[Long.bitCount(occupancy)];

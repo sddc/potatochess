@@ -1,9 +1,10 @@
 import java.util.ArrayList;
 
 public class KingMoveGen extends MoveGen {
-	private static KingMoveGen instance = new KingMoveGen();
 	public static final boolean KINGSIDE = true;
 	public static final boolean QUEENSIDE = false;
+	private static KingMoveGen instance = new KingMoveGen();
+	public static final long[] kingMoves = genKingMoves();
 
 	private KingMoveGen() {
 	}
@@ -13,7 +14,7 @@ public class KingMoveGen extends MoveGen {
 	}
 
 	@Override
-	public long genMoveBitboard(boolean side) {
+	public long genMoveBitboard(boolean side, Square fromSquare) {
 		return 1L;
 	}
 
@@ -23,12 +24,10 @@ public class KingMoveGen extends MoveGen {
 	}
 
 	@Override
-	public boolean isKingInCheck(boolean side) {
+	public boolean isPositionAttacked(boolean side, long position) {
 		return false;
 	}
 	 
-	public static final long[] kingMoves = genKingMoves();
-	
 	/*
 	 * _ _ _ _ _ _ _ _
 	 * _ _ _ _ _ _ _ _
