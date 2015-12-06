@@ -11,17 +11,28 @@ public class QueenMoveGen extends SlidingMoveGen {
 	}
 
 	@Override	
-	public long genMoveBitboard(boolean side) {
-		return 1L;
+	public long genMoveBitboard(boolean side, Square fromSquare) {
+		return (getRookMoves(fromSquare.intValue) | getBishopMoves(fromSquare.intValue)) & ~board.getSidePieces(side);
 	}
 
 	@Override
 	public Piece sidePiece(boolean side) {
-		return Piece.WHITE_PAWN;
+		if(side) {
+			return Piece.WHITE_QUEEN;
+		} else {
+			return Piece.BLACK_QUEEN;
+		}
 	}
 
 	@Override
 	public boolean isKingInCheck(boolean side) {
+		Square kingSquare = getOccupancyIndexes(board.getKingBitboard(side))[0];
+		long queenAttackMask = getBishopMoves(kingSquare.intValue) | getRookMoves(kingSquare.intValue);
+
+		if((board.getQueenBitboard(!side) & queenAttackMask) != 0L) {
+			return true;
+		}
+
 		return false;
 	}
 	 
