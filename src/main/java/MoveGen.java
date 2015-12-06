@@ -54,41 +54,51 @@ public abstract class MoveGen {
 	public ArrayList<Move> generateMoves(boolean side) {
 		ArrayList<Move> moves = new ArrayList<Move>();
 
-		for(int fromSquare : getOccupancyIndexes(board.getPieceBitboard(sidePiece(side)))) {
-			long moveBitboard = genMoveBitboard(side);
+		for(Square fromSquare : getOccupancyIndexes(board.getPieceBitboard(sidePiece(side)))) {
+			long moveBitboard = genMoveBitboard(side, fromSquare);
 
-			for(int toSquare : getOccupancyIndexes(moveBitboard)) {
-				Move move = new Move(Square.toEnum(fromSquare), Square.toEnum(toSquare), sidePiece(side));
-				Piece type = board.getPieceType(Square.toEnum(toSquare));
+			for(Square toSquare : getOccupancyIndexes(moveBitboard)) {
+				Move move = new Move(fromSquare, toSquare, sidePiece(side));
+				Piece type = board.getPieceType(toSquare);
 
 				if(type != Piece.EMPTY) {
 					move.setFlag(Flag.CAPTURE);
 					move.setCapturePieceType(type);
 				}
 				
-				board.move(side, move);
-				if(!isKingInCheck(side)) {
+				if(isValidMove(side, move)) {
 					moves.add(move);
 				}
-				board.undoMove(side);
 			}
 		}
 
 		return moves;
 	}
 
-	abstract public long genMoveBitboard(boolean side);
+	public boolean isValidMove(boolean side, Move move) {
+		board.move(side, move);
+
+		for(MoveGen mg : moveGens) {
+			if(mg.isKingInCheck(side)) {
+				return false;
+			}
+		}
+
+		board.undoMove(side);
+		return true;
+	}
+
+	abstract public long genMoveBitboard(boolean side, Square fromSquare);
 	abstract public Piece sidePiece(boolean side);
 	abstract public boolean isKingInCheck(boolean side);
 
-	public static int[] getOccupancyIndexes(long occupancy) {
-		long mask = 1L;
-		int[] occupancyIndexes = new int[Long.bitCount(occupancy)];
+	public static Square[] getOccupancyIndexes(long occupancy) {
+		Square[] occupancyIndexes = new Square[Long.bitCount(occupancy)];
 		int index = 0;
 
 		for(int i = 0; i < 64; i++) {
-			if((occupancy & mask) != 0L) {
-				occupancyIndexes[index++] = i;
+			if((occupancy & 1L) != 0L) {
+				occupancyIndexes[index++] = Square.toEnum(i);
 			}
 			occupancy = occupancy >>> 1;
 		}
@@ -96,11 +106,6 @@ public abstract class MoveGen {
 	}
 
 	public static long getSquareMask(int squareIndex) {
-		long mask = 0x0000000000000001L;
-		if(squareIndex == 0) {
-			return mask;
-		} else {
-			return mask << squareIndex;
-		}
+		return 1L << squareIndex;
 	}
 }

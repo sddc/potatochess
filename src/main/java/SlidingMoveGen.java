@@ -62,7 +62,7 @@ public abstract class SlidingMoveGen extends MoveGen {
 		}
 	}
 
-	public static long[] genOccupancyVariations(long occupancy, int[] occupancyIndexes) {
+	public static long[] genOccupancyVariations(long occupancy, Square[] occupancyIndexes) {
 		long mask = 1L;
 		long[] occupancyVariations = new long[(int)(1L << Long.bitCount(occupancy))];
 		int index = 0;
@@ -73,7 +73,7 @@ public abstract class SlidingMoveGen extends MoveGen {
 
 			for(int j = 0; j < occupancyIndexes.length; j++) {
 				if((variation & mask) != 0L) {
-					occupancyVariation |= mask << occupancyIndexes[j];
+					occupancyVariation |= mask << occupancyIndexes[j].intValue;
 				}
 				variation = variation >>> 1;
 			}
@@ -113,20 +113,6 @@ public abstract class SlidingMoveGen extends MoveGen {
 			moves[i] = move;
 		}
 		return moves;
-	}
-
-	public static int[] getOccupancyIndexes(long occupancy) {
-		long mask = 1L;
-		int[] occupancyIndexes = new int[Long.bitCount(occupancy)];
-		int index = 0;
-
-		for(int i = 0; i < 64; i++) {
-			if((occupancy & mask) != 0L) {
-				occupancyIndexes[index++] = i;
-			}
-			occupancy = occupancy >>> 1;
-		}
-		return occupancyIndexes;
 	}
 
 	public static long shift(boolean direction, int amount, long mask) {
