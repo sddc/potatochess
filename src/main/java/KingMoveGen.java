@@ -1,18 +1,32 @@
 import java.util.ArrayList;
 
 public class KingMoveGen extends MoveGen {
-	public KingMoveGen(Board board, boolean side) {
-		super(board, side);
-	}
+	private static KingMoveGen instance = new KingMoveGen();
 	public static final boolean KINGSIDE = true;
 	public static final boolean QUEENSIDE = false;
-	public ArrayList<Move> genMoves() {
-		return null; 
+
+	private KingMoveGen() {
 	}
-	 
-	public boolean isKingAttacked() {
+
+	public static KingMoveGen getInstance() {
+		return instance;
+	}
+
+	@Override
+	public long genMoveBitboard(boolean side) {
+		return 1L;
+	}
+
+	@Override
+	public Piece sidePiece(boolean side) {
+		return Piece.WHITE_PAWN;
+	}
+
+	@Override
+	public boolean isKingInCheck(boolean side) {
 		return false;
 	}
+	 
 	public static final long[] kingMoves = genKingMoves();
 	
 	/*
@@ -94,6 +108,45 @@ public class KingMoveGen extends MoveGen {
 			return true;
 		} else {
 			return false;
+		}
+	}
+	
+	private void genCastlingMoves(boolean side, ArrayList<Move> moves) {
+		long opponentAttacks = genAttackSquares(!side);
+		Move m;
+		// check if king in check
+		if(kingInCheck(side, opponentAttacks)) {
+			return;
+		}
+
+		// check if kingside castling is available
+		if(chessboard.castlingAvailable(side, Board.KINGSIDE, opponentAttacks)) {
+			if(side == Board.WHITE) {
+				m = new Move(Square.E1, Square.G1, Piece.WHITE_KING);
+				m.setFlag(Flag.CASTLE);
+				m.setCastleType(Board.KINGSIDE);
+				moves.add(m);
+			} else {
+				m = new Move(Square.E8, Square.G8, Piece.BLACK_KING);
+				m.setFlag(Flag.CASTLE);
+				m.setCastleType(Board.KINGSIDE);
+				moves.add(m);
+			}
+		}
+
+		// check if queenside castling is available
+		if(chessboard.castlingAvailable(side, Board.QUEENSIDE, opponentAttacks)) {
+			if(side == Board.WHITE) {
+				m = new Move(Square.E1, Square.C1, Piece.WHITE_KING);
+				m.setFlag(Flag.CASTLE);
+				m.setCastleType(Board.QUEENSIDE);
+				moves.add(m);
+			} else {
+				m = new Move(Square.E8, Square.C8, Piece.BLACK_KING);
+				m.setFlag(Flag.CASTLE);
+				m.setCastleType(Board.QUEENSIDE);
+				moves.add(m);
+			}
 		}
 	}
 	*/

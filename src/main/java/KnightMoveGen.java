@@ -1,16 +1,30 @@
 import java.util.ArrayList;
 
 public class KnightMoveGen extends MoveGen {
-	public KnightMoveGen(Board board, boolean side) {
-		super(board, side);
+	private static KnightMoveGen instance = new KnightMoveGen();
+
+	private KnightMoveGen() {
 	}
-	public ArrayList<Move> genMoves() {
-		return null;
+
+	public static KnightMoveGen getInstance() {
+		return instance;
 	}
-	 
-	public boolean isKingAttacked() {
+
+	@Override	
+	public long genMoveBitboard(boolean side) {
+		return 1L;
+	}
+
+	@Override
+	public Piece sidePiece(boolean side) {
+		return Piece.WHITE_PAWN;
+	}
+
+	@Override
+	public boolean isKingInCheck(boolean side) {
 		return false;
 	}
+	 
 	public static final long[] knightMoves = genKnightMoves();
 
 	/*

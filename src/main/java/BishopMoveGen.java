@@ -1,14 +1,28 @@
 import java.util.ArrayList;
 
 public class BishopMoveGen extends SlidingMoveGen {
-	public BishopMoveGen(Board board, boolean side) {
-		super(board, side);
+	private static BishopMoveGen instance = new BishopMoveGen();
+
+	private BishopMoveGen() {
 	}
-	public ArrayList<Move> genMoves() {
-		return null;
+
+	public static BishopMoveGen getInstance() {
+		return instance;
 	}
-	 
-	public boolean isKingAttacked() {
+
+	@Override	
+	public long genMoveBitboard(boolean side) {
+		return 1L;
+	}
+
+	@Override
+	public Piece sidePiece(boolean side) {
+		return Piece.WHITE_PAWN;
+	}
+
+	@Override
+	public boolean isKingInCheck(boolean side) {
 		return false;
 	}
+	 
 }

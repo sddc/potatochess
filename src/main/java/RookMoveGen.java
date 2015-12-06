@@ -1,14 +1,28 @@
 import java.util.ArrayList;
 
 public class RookMoveGen extends SlidingMoveGen {
-	public RookMoveGen(Board board, boolean side) {
-		super(board, side);
+	private static RookMoveGen instance = new RookMoveGen();
+
+	private RookMoveGen() {
 	}
-	public ArrayList<Move> genMoves() {
-		return null;
+
+	public static RookMoveGen getInstance() {
+		return instance;
 	}
-	 
-	public boolean isKingAttacked() {
+
+	@Override	
+	public long genMoveBitboard(boolean side) {
+		return 1L;
+	}
+	
+	@Override
+	public Piece sidePiece(boolean side) {
+		return Piece.WHITE_PAWN;
+	}
+
+	@Override
+	public boolean isKingInCheck(boolean side) {
 		return false;
 	}
+	 
 }

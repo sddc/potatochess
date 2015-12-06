@@ -1,4 +1,4 @@
-public class potatochess {
+public class PotatoChess {
 	public static void main(String[] args) {
 		Game game = new Game();
 	}

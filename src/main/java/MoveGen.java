@@ -21,36 +21,66 @@ public abstract class MoveGen {
 	public static final long maskFileA = 0x101010101010101L;
 	public static final long maskFileH = 0x8080808080808080L;
 
-	protected Board board;
-	protected boolean side;
-	protected Piece piece;
+	protected static Board board = null;
 
-	public MoveGen(Board board, boolean side) {
-		this.board = board;
-		this.side = side;
+	private static MoveGen[] moveGens = {
+	       PawnMoveGen.getInstance(),	
+	       RookMoveGen.getInstance(),	
+	       KnightMoveGen.getInstance(),	
+	       BishopMoveGen.getInstance(),	
+	       QueenMoveGen.getInstance(),	
+	       KingMoveGen.getInstance()
+	};
+
+	public static void setBoard(Board board) {
+		MoveGen.board = board;
 	}
 
-	abstract public ArrayList<Move> genMoves();
-	abstract public boolean isKingAttacked();
+	public static ArrayList<Move> getMoves(boolean side) {
+		if(board == null) {
+			// check if board is set
+			return null;
+		}
 
-	private static boolean kingInCheck(Board board, boolean side) {
-		MoveGen[] moveGens = {
-			new PawnMoveGen(board, side),
-			new RookMoveGen(board, side),
-			new KnightMoveGen(board, side),
-			new BishopMoveGen(board, side),
-			new QueenMoveGen(board, side),
-			new KingMoveGen(board, side)
-		};
+		ArrayList<Move> moves = new ArrayList<Move>();
 
 		for(MoveGen mg : moveGens) {
-			if(mg.isKingAttacked()) {
-				return true;
+			moves.addAll(mg.generateMoves(side));
+		}
+
+		return moves;
+	}
+
+	public ArrayList<Move> generateMoves(boolean side) {
+		ArrayList<Move> moves = new ArrayList<Move>();
+
+		for(int fromSquare : getOccupancyIndexes(board.getPieceBitboard(sidePiece(side)))) {
+			long moveBitboard = genMoveBitboard(side);
+
+			for(int toSquare : getOccupancyIndexes(moveBitboard)) {
+				Move move = new Move(Square.toEnum(fromSquare), Square.toEnum(toSquare), sidePiece(side));
+				Piece type = board.getPieceType(Square.toEnum(toSquare));
+
+				if(type != Piece.EMPTY) {
+					move.setFlag(Flag.CAPTURE);
+					move.setCapturePieceType(type);
+				}
+				
+				board.move(side, move);
+				if(!isKingInCheck(side)) {
+					moves.add(move);
+				}
+				board.undoMove(side);
 			}
 		}
-		return false;
+
+		return moves;
 	}
-	
+
+	abstract public long genMoveBitboard(boolean side);
+	abstract public Piece sidePiece(boolean side);
+	abstract public boolean isKingInCheck(boolean side);
+
 	public static int[] getOccupancyIndexes(long occupancy) {
 		long mask = 1L;
 		int[] occupancyIndexes = new int[Long.bitCount(occupancy)];
@@ -65,12 +95,12 @@ public abstract class MoveGen {
 		return occupancyIndexes;
 	}
 
-	public static long get1BitMask(Square s) {
+	public static long getSquareMask(int squareIndex) {
 		long mask = 0x0000000000000001L;
-		if(s.intValue == 0) {
+		if(squareIndex == 0) {
 			return mask;
 		} else {
-			return mask << s.intValue;
+			return mask << squareIndex;
 		}
 	}
 }
