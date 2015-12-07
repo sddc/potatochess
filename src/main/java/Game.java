@@ -14,6 +14,7 @@ public class Game {
 	public Game() {
 		chessboard = parseFen(initialPosition);
 		activeColor = chessboard.getActiveColor();
+		MoveGen.setBoard(chessboard);
 		moves = MoveGen.getMoves(activeColor);
 		start();
 	}
@@ -81,6 +82,7 @@ public class Game {
 								preSplitCommand.length());
 						chessboard = parseFen(position);
 						activeColor = chessboard.getActiveColor();
+						MoveGen.setBoard(chessboard);
 						moves = MoveGen.getMoves(activeColor);
 					} catch(IllegalArgumentException e) {
 						System.out.println("setboard failed: " + e.getMessage());
