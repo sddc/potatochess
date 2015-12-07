@@ -6,7 +6,6 @@ import java.util.Map;
 import java.util.Arrays;
 
 public class Game {
-	/*
 	private Board chessboard;
 	private ArrayList<Move> moves;
 	private static final String initialPosition = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
@@ -15,7 +14,7 @@ public class Game {
 	public Game() {
 		chessboard = parseFen(initialPosition);
 		activeColor = chessboard.getActiveColor();
-		moves = genValidMoves(activeColor);
+		moves = MoveGen.getMoves(activeColor);
 		start();
 	}
 
@@ -58,7 +57,7 @@ public class Game {
 								if(m.toString().equals(command[1])) {
 									chessboard.move(activeColor, m);
 									activeColor = chessboard.toggleActiveColor();
-									moves = genValidMoves(activeColor);
+									moves = MoveGen.getMoves(activeColor);
 									foundMove = true;
 									break;
 								}
@@ -82,7 +81,7 @@ public class Game {
 								preSplitCommand.length());
 						chessboard = parseFen(position);
 						activeColor = chessboard.getActiveColor();
-						moves = genValidMoves(activeColor);
+						moves = MoveGen.getMoves(activeColor);
 					} catch(IllegalArgumentException e) {
 						System.out.println("setboard failed: " + e.getMessage());
 					}
@@ -114,7 +113,7 @@ public class Game {
 
 		int Nodes = 0;
 
-		ArrayList<Move> moves = genValidMoves(side);
+		ArrayList<Move> moves = MoveGen.getMoves(side);
 		for(Move m : moves) {
 			chessboard.move(side, m);
 			Nodes += perft(!side, depth-1);
@@ -134,7 +133,7 @@ public class Game {
 			results = new ArrayList<String>();
 		}
 
-		ArrayList<Move> moves = genValidMoves(side);
+		ArrayList<Move> moves = MoveGen.getMoves(side);
 		for(Move m : moves) {
 			chessboard.move(side, m);
 			Nodes += perft(!side, depth-1);
@@ -267,5 +266,4 @@ public class Game {
 
 		return new Board(bitboards, castleStatus, lastMoveDoublePawnPush, epTargetSquare, activeColor);
 	}
-	*/		
 }

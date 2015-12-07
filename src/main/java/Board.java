@@ -175,7 +175,7 @@ public class Board {
 				break;
 		}
 	}
-/*
+
 	public void print() {
 		int rank = 8;
 		System.out.println("     A   B   C   D   E   F   G   H");
@@ -192,15 +192,19 @@ public class Board {
 		}
 		System.out.println("     A   B   C   D   E   F   G   H");
 	}
-*/
+
 	public Piece getPieceType(Square s) {
-		long mask = 1L << s.intValue;
+		long mask = get1BitMask(s);
 		for(int i = 0; i < 12; i++ ) {
 			if((mask & bitboards[i]) != 0) {
 				return Piece.toEnum(i);
 			}
 		}
 		return Piece.EMPTY;
+	}
+
+	public long get1BitMask(Square s) {
+		return 1L << s.intValue;
 	}
 
 	private void modify(Piece type, long modifier) {
@@ -219,7 +223,6 @@ public class Board {
 	}
 
 	public void move(boolean side, Move m) {
-		/*
 		// assumes m is at least pseudo legal
 
 		// save move to undo
@@ -336,11 +339,9 @@ public class Board {
 		if(pieceType == Piece.BLACK_ROOK && fromSquare == Square.A8) {
 			castleStatus[3] = false;
 		}	
-		*/
 	}
 
 	public void undoMove(boolean side) {
-		/*
 		if(previousMoves.isEmpty()) {
 			return;
 		}
@@ -402,7 +403,6 @@ public class Board {
 			// remove bit from chosen piece
 			modify(m.getPromotionType(), toMask);
 		}
-		*/
 	}
 
 	public boolean castlingAvailable(boolean side, boolean squares) {
