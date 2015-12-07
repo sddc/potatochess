@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.lang.UnsupportedOperationException;
 
 public class PawnMoveGen extends MoveGen {
 	private static PawnMoveGen instance = new PawnMoveGen();
@@ -13,114 +14,127 @@ public class PawnMoveGen extends MoveGen {
 	@Override
 	public ArrayList<Move> generateMoves(boolean side) {
 		ArrayList<Move> moves = new ArrayList<Move>();
-/*
-		if(chessboard.lastMoveDPP()) {
-			epCapture = true;
-			epCaptureSquare = chessboard.getEpTargetSquare();
-			// add en passant square
-			opponentPieces = chessboard.getSidePieces(!side);
-			opponentPieces |= Board.get1BitMask(epCaptureSquare);
-		} else {
-			opponentPieces = chessboard.getSidePieces(!side);
-		}
 
-		// pawn attack
-		for(Square i : Board.get1BitIndexes(chessboard.getPawns(side))) {
-			j = opponentPieces & MoveGen.genPawnAttack(side, Board.get1BitMask(i), chessboard.getSidePieces(side));
-			for(Square k : Board.get1BitIndexes(j)) {
-				m = new Move(i, k, pawn);
+		for(Square fromSquare : getOccupancyIndexes(board.getPawnBitboard(side))) {
+			long moveBitboard;
 
-				if(epCapture && (k == epCaptureSquare)) {
-					m.setFlag(Flag.EP_CAPTURE);
+			// double pawn push
+			moveBitboard = genDoublePawnPush(side, getSquareMask(fromSquare), board.getAllPieces());
+			for(Square toSquare : getOccupancyIndexes(moveBitboard)) {
+				Move move = new Move(fromSquare, toSquare, sidePiece(side));
+				move.setFlag(Flag.DOUBLE_PAWN_PUSH);
+
+				if(isValidMove(side, move, board.getKingBitboard(side))) {
+					moves.add(move);
+				}
+			}
+
+			// pawn push
+			moveBitboard = genPawnPush(side, getSquareMask(fromSquare), board.getAllPieces());
+			for(Square toSquare : getOccupancyIndexes(moveBitboard)) {
+				if(isPromotion(toSquare)) {
+					genPromotionMoves(side, false, fromSquare, toSquare, moves);
+				} else {
+					Move move = new Move(fromSquare, toSquare, sidePiece(side));
+					if(isValidMove(side, move, board.getKingBitboard(side))) {
+						moves.add(move);
+					}
+				}
+			}
+
+			// pawn attack
+			long opponentPieces = board.getSidePieces(!side);
+			if(board.lastMoveDPP()) {
+				// add en passant square
+				opponentPieces |= getSquareMask(board.getEpTargetSquare());
+			}
+
+			moveBitboard = opponentPieces & genPawnAttack(side, getSquareMask(fromSquare), board.getSidePieces(side));
+			for(Square toSquare : getOccupancyIndexes(moveBitboard)) {
+				Move move = new Move(fromSquare, toSquare, sidePiece(side));
+
+				if(board.lastMoveDPP() && (toSquare == board.getEpTargetSquare())) {
+					move.setFlag(Flag.EP_CAPTURE);
 					if(side == Board.WHITE) {
-						m.setCapturePieceType(Piece.BLACK_PAWN);
+						move.setCapturePieceType(Piece.BLACK_PAWN);
 					} else {
-						m.setCapturePieceType(Piece.WHITE_PAWN);
+						move.setCapturePieceType(Piece.WHITE_PAWN);
 					}
-					validateAndAdd(side, m, moves);
+					if(isValidMove(side, move, board.getKingBitboard(side))) {
+						moves.add(move);
+					}
 				} else {
-					if(((Board.get1BitMask(k) & Board.maskRank1) != 0) || 
-							((Board.get1BitMask(k) & Board.maskRank8) != 0)) {
-						Move[] promotion ={
-							new Move(i, k, pawn),
-							new Move(i, k, pawn),
-							new Move(i, k, pawn),
-							new Move(i, k, pawn)
-						};
-						promotion[0].setPromotionType(queen);
-						promotion[1].setPromotionType(rook);
-						promotion[2].setPromotionType(knight);
-						promotion[3].setPromotionType(bishop);
-						for(Move p : promotion) {
-							type = chessboard.getPieceType(k);
-							p.setCapturePieceType(type);
-							p.setFlag(Flag.CAPTURE);
-							p.setFlag(Flag.PROMOTION);
-							validateAndAdd(side, p, moves);
+					if(isPromotion(toSquare)) {
+						genPromotionMoves(side, true, fromSquare, toSquare, moves);
+					} else {
+						Piece type = board.getPieceType(toSquare);
+						move.setFlag(Flag.CAPTURE);
+						move.setCapturePieceType(type);
+						if(isValidMove(side, move, board.getKingBitboard(side))) {
+							moves.add(move);
 						}
-					} else {
-						type = chessboard.getPieceType(k);
-						m.setFlag(Flag.CAPTURE);
-						m.setCapturePieceType(type);
-						validateAndAdd(side, m, moves);
 					}
 				}
 
 			}
 		}
-
-		// pawn push
-		for(Square i : Board.get1BitIndexes(chessboard.getPawns(side))) {
-			j = MoveGen.genPawnPush(side, Board.get1BitMask(i), chessboard.getAllPieces());
-			for(Square k : Board.get1BitIndexes(j)) {
-				if(((Board.get1BitMask(k) & Board.maskRank1) != 0) || 
-						((Board.get1BitMask(k) & Board.maskRank8) != 0)) {
-					Move[] promotion ={
-						new Move(i, k, pawn),
-						new Move(i, k, pawn),
-						new Move(i, k, pawn),
-						new Move(i, k, pawn)
-					};
-					promotion[0].setPromotionType(queen);
-					promotion[1].setPromotionType(rook);
-					promotion[2].setPromotionType(knight);
-					promotion[3].setPromotionType(bishop);
-					for(Move p : promotion) {
-						p.setFlag(Flag.PROMOTION);
-						validateAndAdd(side, p, moves);
-					}
-				} else {
-					m = new Move(i, k, pawn);
-					validateAndAdd(side, m, moves);
-				}
-			}
-		}
-
-		// double pawn push
-		for(Square i : Board.get1BitIndexes(chessboard.getPawns(side))) {
-			j = MoveGen.genDoublePawnPush(side, Board.get1BitMask(i), chessboard.getAllPieces());
-			for(Square k : Board.get1BitIndexes(j)) {
-				m = new Move(i, k, pawn);
-				m.setFlag(Flag.DOUBLE_PAWN_PUSH);
-				validateAndAdd(side, m, moves);
-			}
-		}
-*/
 		return moves;
+	}
+
+	private boolean isPromotion(Square toSquare) {
+		if(((getSquareMask(toSquare) & maskRank1) != 0) || ((getSquareMask(toSquare) & maskRank8) != 0)) {
+			return true;
+		}
+
+		return false;
+	}
+
+	private void genPromotionMoves(boolean side, boolean isAttack, Square fromSquare, Square toSquare, ArrayList<Move> moves) {
+		Move[] promotion = {
+			new Move(fromSquare, toSquare, sidePiece(side)),
+			new Move(fromSquare, toSquare, sidePiece(side)),
+			new Move(fromSquare, toSquare, sidePiece(side)),
+			new Move(fromSquare, toSquare, sidePiece(side)),
+		};
+
+		promotion[0].setPromotionType(moveGens[1].sidePiece(side));
+		promotion[1].setPromotionType(moveGens[2].sidePiece(side));
+		promotion[2].setPromotionType(moveGens[3].sidePiece(side));
+		promotion[3].setPromotionType(moveGens[4].sidePiece(side));
+
+		for(Move p : promotion) {
+			if(isAttack) {
+				Piece type = board.getPieceType(toSquare);
+				p.setCapturePieceType(type);
+				p.setFlag(Flag.CAPTURE);
+			}
+			p.setFlag(Flag.PROMOTION);
+			if(isValidMove(side, p, board.getKingBitboard(side))) {
+				moves.add(p);
+			}
+		}
 	}
 
 	@Override
 	public long genMoveBitboard(boolean side, Square fromSquare) {
-		return 1L;
+		throw new UnsupportedOperationException("not used for pawn movegen");
 	}
 
 	@Override
 	public Piece sidePiece(boolean side) {
-		return Piece.WHITE_PAWN;
+		if(side) {
+			return Piece.WHITE_PAWN;
+		} else {
+			return Piece.BLACK_PAWN;
+		}
 	}
 
 	@Override
 	public boolean isPositionAttacked(boolean side, long position) {
+		long opponentAttacks = genPawnAttack(!side, board.getPawnBitboard(!side), board.getSidePieces(!side));
+		if((opponentAttacks & position) != 0L) {
+			return true;
+		}
 		return false;
 	}
 

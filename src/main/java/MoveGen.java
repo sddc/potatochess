@@ -106,7 +106,7 @@ public abstract class MoveGen {
 		return occupancyIndexes;
 	}
 
-	public static long getSquareMask(int squareIndex) {
-		return 1L << squareIndex;
+	public static long getSquareMask(Square s) {
+		return 1L << s.intValue;
 	}
 }
