@@ -36,7 +36,7 @@ public abstract class SlidingMoveGen extends MoveGen {
 
 	public long getBishopMoves(boolean side, int squareIndex) {
 		long occupancy = board.getAllPieces() & bishopOccupancyMasks[squareIndex];
-		int index = (int)((bishopMagics[squareIndex] * 0L) >>> bishopShifts[squareIndex]);
+		int index = (int)((bishopMagics[squareIndex] * occupancy) >>> bishopShifts[squareIndex]);
 		return bishopMoves[squareIndex][index] & ~board.getSidePieces(side);
 	}
 
