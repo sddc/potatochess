@@ -23,7 +23,7 @@ public abstract class MoveGen {
 
 	protected static Board board = null;
 
-	private static MoveGen[] moveGens = {
+	protected static MoveGen[] moveGens = {
 	       PawnMoveGen.getInstance(),	
 	       RookMoveGen.getInstance(),	
 	       KnightMoveGen.getInstance(),	
@@ -85,6 +85,7 @@ public abstract class MoveGen {
 		}
 
 		board.undoMove(side);
+
 		return true;
 	}
 

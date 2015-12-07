@@ -2,6 +2,7 @@ import java.util.ArrayList;
 
 public class KnightMoveGen extends MoveGen {
 	private static KnightMoveGen instance = new KnightMoveGen();
+	public static final long[] knightMoves = genKnightMoves();
 
 	private KnightMoveGen() {
 	}
@@ -12,20 +13,30 @@ public class KnightMoveGen extends MoveGen {
 
 	@Override	
 	public long genMoveBitboard(boolean side, Square fromSquare) {
-		return 1L;
+		return knightMoves[fromSquare.intValue] & ~board.getSidePieces(side);
 	}
 
 	@Override
 	public Piece sidePiece(boolean side) {
-		return Piece.WHITE_PAWN;
+		if(side) {
+			return Piece.WHITE_KNIGHT;
+		} else {
+			return Piece.BLACK_KNIGHT;
+		}
 	}
 
 	@Override
 	public boolean isPositionAttacked(boolean side, long position) {
+		for(Square s : getOccupancyIndexes(board.getKnightBitboard(!side))) {
+			long knightAttack = knightMoves[s.intValue] & ~board.getSidePieces(!side);
+
+			if((knightAttack & position) != 0L) {
+				return true;
+			}
+		}
+
 		return false;
 	}
-	 
-	public static final long[] knightMoves = genKnightMoves();
 
 	/*
 	 * _ _ _ _ _ _ _ _

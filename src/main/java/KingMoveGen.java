@@ -1,8 +1,6 @@
 import java.util.ArrayList;
 
 public class KingMoveGen extends MoveGen {
-	public static final boolean KINGSIDE = true;
-	public static final boolean QUEENSIDE = false;
 	private static KingMoveGen instance = new KingMoveGen();
 	public static final long[] kingMoves = genKingMoves();
 
@@ -14,17 +12,36 @@ public class KingMoveGen extends MoveGen {
 	}
 
 	@Override
+	public ArrayList<Move> generateMoves(boolean side) {
+		ArrayList<Move> moves = super.generateMoves(side);
+		genCastlingMoves(side, moves);
+		return moves;
+	}
+
+	@Override
 	public long genMoveBitboard(boolean side, Square fromSquare) {
-		return 1L;
+		return kingMoves[fromSquare.intValue] & ~board.getSidePieces(side);
 	}
 
 	@Override
 	public Piece sidePiece(boolean side) {
-		return Piece.WHITE_PAWN;
+		if(side) {
+			return Piece.WHITE_KING;
+		} else {
+			return Piece.BLACK_KING;
+		}
 	}
 
 	@Override
 	public boolean isPositionAttacked(boolean side, long position) {
+		for(Square s : getOccupancyIndexes(board.getKingBitboard(!side))) {
+			long kingAttack = kingMoves[s.intValue] & ~board.getSidePieces(!side);
+
+			if((kingAttack & position) != 0L) {
+				return true;
+			}
+		}
+
 		return false;
 	}
 	 
@@ -61,92 +78,73 @@ public class KingMoveGen extends MoveGen {
 
 		return genMoves;
 	}
-/*
-	public boolean castlingAvailable(boolean side, boolean squares, long attacks) {
+
+	public boolean castlingSquaresAttacked(boolean side, boolean squares) {
 		// side: true = white, false = black
 		// squares: true = kingside, false = queenside
-		long pieceMask;
 		long attackMask;
 		if(side == Board.WHITE) {
-			if(squares == KINGSIDE) {
-				// check if kingside castle available
-				if(!castleStatus[0]) {
-					return false;
-				}
-				pieceMask = 0x60L;
-				attackMask = pieceMask;
+			if(squares == Board.KINGSIDE) {
+				attackMask = 0x60L;
 			} else {
-				// check if queenside castle available
-				if(!castleStatus[1]) {
-					return false;
-				}
-				pieceMask = 0xEL;
 				attackMask = 0xCL;
 			}
 		} else {
-			if(squares == KINGSIDE) {
-				// check if kingside castle available
-				if(!castleStatus[2]) {
-					return false;
-				}
-				pieceMask = 0x6000000000000000L;
-				attackMask = pieceMask;
+			if(squares == Board.KINGSIDE) {
+				attackMask = 0x6000000000000000L;
 			} else {
-				// check if queenside castle available
-				if(!castleStatus[3]) {
-					return false;
-				}
-				pieceMask = 0xE00000000000000L;
 				attackMask = 0xC00000000000000L;
 			}
 		}
 
-		// check if any pieces between king and rook. also check if opponent
-		// is attacking squares king passes or ends up on
-		if(((pieceMask & board.getAllPieces()) == 0L) && ((attackMask & attacks) == 0L)) {
-			return true;
-		} else {
-			return false;
+		// check if opponent is attacking squares king passes or ends up on
+		
+		for(MoveGen mg : moveGens) {
+			if(mg.isPositionAttacked(side, attackMask)) {
+				return true;
+			}
 		}
+		return false;
 	}
-	
+
 	private void genCastlingMoves(boolean side, ArrayList<Move> moves) {
-		long opponentAttacks = genAttackSquares(!side);
-		Move m;
+		Move move;
 		// check if king in check
-		if(kingInCheck(side, opponentAttacks)) {
-			return;
+		for(MoveGen mg : moveGens) {
+			if(mg.isPositionAttacked(side, board.getKingBitboard(side))) {
+				return;
+			}
 		}
 
 		// check if kingside castling is available
-		if(chessboard.castlingAvailable(side, Board.KINGSIDE, opponentAttacks)) {
+		if(board.castlingAvailable(side, Board.KINGSIDE) && !castlingSquaresAttacked(side, Board.KINGSIDE)) {
 			if(side == Board.WHITE) {
-				m = new Move(Square.E1, Square.G1, Piece.WHITE_KING);
-				m.setFlag(Flag.CASTLE);
-				m.setCastleType(Board.KINGSIDE);
-				moves.add(m);
+				move = new Move(Square.E1, Square.G1, Piece.WHITE_KING);
+				move.setFlag(Flag.CASTLE);
+				move.setCastleType(Board.KINGSIDE);
+				moves.add(move);
 			} else {
-				m = new Move(Square.E8, Square.G8, Piece.BLACK_KING);
-				m.setFlag(Flag.CASTLE);
-				m.setCastleType(Board.KINGSIDE);
-				moves.add(m);
+				move = new Move(Square.E8, Square.G8, Piece.BLACK_KING);
+				move.setFlag(Flag.CASTLE);
+				move.setCastleType(Board.KINGSIDE);
+				moves.add(move);
 			}
 		}
 
 		// check if queenside castling is available
-		if(chessboard.castlingAvailable(side, Board.QUEENSIDE, opponentAttacks)) {
+		if(board.castlingAvailable(side, Board.QUEENSIDE) && !castlingSquaresAttacked(side, Board.QUEENSIDE)) {
 			if(side == Board.WHITE) {
-				m = new Move(Square.E1, Square.C1, Piece.WHITE_KING);
-				m.setFlag(Flag.CASTLE);
-				m.setCastleType(Board.QUEENSIDE);
-				moves.add(m);
+				move = new Move(Square.E1, Square.C1, Piece.WHITE_KING);
+				move.setFlag(Flag.CASTLE);
+				move.setCastleType(Board.QUEENSIDE);
+				moves.add(move);
 			} else {
-				m = new Move(Square.E8, Square.C8, Piece.BLACK_KING);
-				m.setFlag(Flag.CASTLE);
-				m.setCastleType(Board.QUEENSIDE);
-				moves.add(m);
+				move = new Move(Square.E8, Square.C8, Piece.BLACK_KING);
+				move.setFlag(Flag.CASTLE);
+				move.setCastleType(Board.QUEENSIDE);
+				moves.add(move);
 			}
 		}
 	}
-	*/
+	
 }

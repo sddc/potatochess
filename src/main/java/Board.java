@@ -5,6 +5,8 @@ import java.util.ArrayDeque;
 public class Board {
 	public static final boolean WHITE = true;
 	public static final boolean BLACK = false;
+	public static final boolean KINGSIDE = true;
+	public static final boolean QUEENSIDE = false;
 	
 	/* castleStatus array 
 	 * 0 = white kingside not rook moved?
@@ -401,5 +403,47 @@ public class Board {
 			modify(m.getPromotionType(), toMask);
 		}
 		*/
+	}
+
+	public boolean castlingAvailable(boolean side, boolean squares) {
+		// side: true = white, false = black
+		// squares: true = kingside, false = queenside
+		long pieceMask;
+		if(side == Board.WHITE) {
+			if(squares == KINGSIDE) {
+				// check if kingside castle available
+				if(!castleStatus[0]) {
+					return false;
+				}
+				pieceMask = 0x60L;
+			} else {
+				// check if queenside castle available
+				if(!castleStatus[1]) {
+					return false;
+				}
+				pieceMask = 0xEL;
+			}
+		} else {
+			if(squares == KINGSIDE) {
+				// check if kingside castle available
+				if(!castleStatus[2]) {
+					return false;
+				}
+				pieceMask = 0x6000000000000000L;
+			} else {
+				// check if queenside castle available
+				if(!castleStatus[3]) {
+					return false;
+				}
+				pieceMask = 0xE00000000000000L;
+			}
+		}
+
+		// check if any pieces between king and rook
+		if((pieceMask & getAllPieces()) == 0L) {
+			return true;
+		} else {
+			return false;
+		}
 	}
 }
