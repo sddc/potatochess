@@ -66,7 +66,7 @@ public abstract class MoveGen {
 					move.setCapturePieceType(type);
 				}
 				
-				if(isValidMove(side, move, board.getKingBitboard(side))) {
+				if(isValidMove(side, move)) {
 					moves.add(move);
 				}
 			}
@@ -75,11 +75,12 @@ public abstract class MoveGen {
 		return moves;
 	}
 
-	public boolean isValidMove(boolean side, Move move, long position) {
+	public boolean isValidMove(boolean side, Move move) {
 		board.move(side, move);
 
 		for(MoveGen mg : moveGens) {
-			if(mg.isPositionAttacked(side, position)) {
+			if(mg.isPositionAttacked(side, board.getKingBitboard(side))) {
+				board.undoMove(side);
 				return false;
 			}
 		}

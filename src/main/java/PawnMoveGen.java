@@ -24,7 +24,7 @@ public class PawnMoveGen extends MoveGen {
 				Move move = new Move(fromSquare, toSquare, sidePiece(side));
 				move.setFlag(Flag.DOUBLE_PAWN_PUSH);
 
-				if(isValidMove(side, move, board.getKingBitboard(side))) {
+				if(isValidMove(side, move)) {
 					moves.add(move);
 				}
 			}
@@ -36,7 +36,7 @@ public class PawnMoveGen extends MoveGen {
 					genPromotionMoves(side, false, fromSquare, toSquare, moves);
 				} else {
 					Move move = new Move(fromSquare, toSquare, sidePiece(side));
-					if(isValidMove(side, move, board.getKingBitboard(side))) {
+					if(isValidMove(side, move)) {
 						moves.add(move);
 					}
 				}
@@ -60,7 +60,7 @@ public class PawnMoveGen extends MoveGen {
 					} else {
 						move.setCapturePieceType(Piece.WHITE_PAWN);
 					}
-					if(isValidMove(side, move, board.getKingBitboard(side))) {
+					if(isValidMove(side, move)) {
 						moves.add(move);
 					}
 				} else {
@@ -70,7 +70,7 @@ public class PawnMoveGen extends MoveGen {
 						Piece type = board.getPieceType(toSquare);
 						move.setFlag(Flag.CAPTURE);
 						move.setCapturePieceType(type);
-						if(isValidMove(side, move, board.getKingBitboard(side))) {
+						if(isValidMove(side, move)) {
 							moves.add(move);
 						}
 					}
@@ -109,7 +109,7 @@ public class PawnMoveGen extends MoveGen {
 				p.setFlag(Flag.CAPTURE);
 			}
 			p.setFlag(Flag.PROMOTION);
-			if(isValidMove(side, p, board.getKingBitboard(side))) {
+			if(isValidMove(side, p)) {
 				moves.add(p);
 			}
 		}
