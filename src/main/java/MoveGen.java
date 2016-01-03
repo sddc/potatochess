@@ -90,6 +90,16 @@ public abstract class MoveGen {
 		return true;
 	}
 
+	public static boolean isKingInCheck(boolean side) {
+		for(MoveGen mg : moveGens) {
+			if(mg.isPositionAttacked(side, board.getKingBitboard(side))) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	abstract public long genMoveBitboard(boolean side, Square fromSquare);
 	abstract public Piece sidePiece(boolean side);
 	abstract public boolean isPositionAttacked(boolean side, long position);

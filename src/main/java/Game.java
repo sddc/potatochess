@@ -59,6 +59,19 @@ public class Game {
 									chessboard.move(activeColor, m);
 									activeColor = chessboard.toggleActiveColor();
 									moves = MoveGen.getMoves(activeColor);
+									// check if game is over
+									if(moves.size() == 0) {
+										if(MoveGen.isKingInCheck(activeColor)) {
+											if(activeColor) {
+												System.out.println("Checkmate. Black has won.");
+											} else {
+												System.out.println("Checkmate. White has won.");
+											}
+										} else {
+											System.out.println("Game is a statemate");
+										}
+										return;
+									}
 									foundMove = true;
 									break;
 								}
