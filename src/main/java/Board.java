@@ -30,6 +30,7 @@ public class Board {
 	private long[] bitboards;
 	private long whitePieces;
 	private long blackPieces;
+    private int[] pieceCounts;
 	
 	private Deque<PreviousMove> previousMoves = new ArrayDeque<PreviousMove>();
 
@@ -41,7 +42,17 @@ public class Board {
 		this.activeColor = activeColor;
 		whitePieces = genSidePieces(Board.WHITE);
 		blackPieces = genSidePieces(Board.BLACK); 
+
+        // count pieces
+        pieceCounts = new int[12];
+        for(int i = 0; i < 12; i++) {
+            pieceCounts[i] = Long.bitCount(bitboards[i]);
+        }
 	}
+
+    public int[] getPieceCounts() {
+        return pieceCounts.clone();
+    }
 
 	public boolean getActiveColor() {
 		return activeColor;
@@ -241,6 +252,7 @@ public class Board {
 		if(m.getFlag(Flag.CAPTURE)) {
 			Piece capturePieceType = m.getCapturePieceType();
 			modify(capturePieceType, toMask);
+            pieceCounts[capturePieceType.intValue]--;
 
 			// castling checks
 			if(capturePieceType == Piece.WHITE_ROOK && toSquare == Square.H1) {
@@ -274,8 +286,10 @@ public class Board {
 		if(m.getFlag(Flag.EP_CAPTURE)) {
 			if(side == Board.WHITE) {
 				modify(Piece.BLACK_PAWN, get1BitMask(Square.toEnum(toSquare.intValue-8)));
+                pieceCounts[Piece.BLACK_PAWN.intValue]--;
 			} else {
 				modify(Piece.WHITE_PAWN, get1BitMask(Square.toEnum(toSquare.intValue+8)));
+                pieceCounts[Piece.WHITE_PAWN.intValue]--;
 			}
 		}
 
@@ -308,9 +322,12 @@ public class Board {
 		if(m.getFlag(Flag.PROMOTION)) {
 			// remove bit from pawn bitboard
 			modify(pieceType, toMask);
+            pieceCounts[pieceType.intValue]--;
 
 			// add bit to chosen piece
-			modify(m.getPromotionType(), toMask);
+            Piece promotionType = m.getPromotionType();
+			modify(promotionType, toMask);
+            pieceCounts[promotionType.intValue]++;
 		}
 
 		// castling checks
@@ -364,15 +381,19 @@ public class Board {
 
 		// restore bit from capture bitboard
 		if(m.getFlag(Flag.CAPTURE)) {
-			modify(m.getCapturePieceType(), toMask);
+			Piece capturePieceType = m.getCapturePieceType();
+			modify(capturePieceType, toMask);
+            pieceCounts[capturePieceType.intValue]++;
 		}
 
 		// restore ep capture
 		if(m.getFlag(Flag.EP_CAPTURE)) {
 			if(side == Board.WHITE) {
 				modify(Piece.BLACK_PAWN, get1BitMask(Square.toEnum(toSquare.intValue-8)));
+                pieceCounts[Piece.BLACK_PAWN.intValue]++;
 			} else {
 				modify(Piece.WHITE_PAWN, get1BitMask(Square.toEnum(toSquare.intValue+8)));
+                pieceCounts[Piece.WHITE_PAWN.intValue]++;
 			}
 		}
 
@@ -399,9 +420,12 @@ public class Board {
 		if(m.getFlag(Flag.PROMOTION)) {
 			// restore bit from pawn bitboard
 			modify(pieceType, toMask);
+            pieceCounts[pieceType.intValue]++;
 
 			// remove bit from chosen piece
-			modify(m.getPromotionType(), toMask);
+            Piece promotionType = m.getPromotionType();
+			modify(promotionType, toMask);
+            pieceCounts[promotionType.intValue]--;
 		}
 	}
 
