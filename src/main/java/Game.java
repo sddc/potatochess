@@ -39,6 +39,8 @@ public class Game {
 					break;
 				case "print":
 					chessboard.print();
+                    System.out.print("Material Score: ");
+                    System.out.println(Evaluation.materialScore(chessboard) / 100.0);
 					if(activeColor == Board.WHITE) {
 						System.out.println("Active color: White (uppercase)");
 					} else {
@@ -49,6 +51,9 @@ public class Game {
 						System.out.println("en passant target square: " + chessboard.getEpTargetSquare().toString());
 					}
 					break;
+                case "bestmove":
+                    System.out.println(Search.getBestMove(chessboard, 7, activeColor));
+                    break;
 				case "move":
 					if(command.length == 2) {
 						if(command[1].length() == 4) {
@@ -58,6 +63,13 @@ public class Game {
 								if(m.toString().equals(command[1])) {
 									chessboard.move(activeColor, m);
 									activeColor = chessboard.toggleActiveColor();
+
+                                    Move bestMove = Search.getBestMove(chessboard, 7, activeColor);
+                                    //if(bestMove != null) {
+                                        chessboard.move(activeColor, bestMove);
+                                    //}
+									activeColor = chessboard.toggleActiveColor();
+
 									moves = MoveGen.getMoves(activeColor);
 									// check if game is over
 									if(moves.size() == 0) {
