@@ -10,12 +10,12 @@ public class Search {
         int color = side ? 1 : -1;
 
         if(depth == 0) {
-            return new ScoredMove(null, Evaluation.materialScore(b) * color);
+            return new ScoredMove(null, Evaluation.score(b) * color);
         }
 
         ArrayList<Move> moves = MoveGen.getMoves(side);
         if(moves.size() == 0) {
-            return new ScoredMove(null, Evaluation.materialScore(b) * color);
+            return new ScoredMove(null, Evaluation.score(b) * color);
         }
         
         Move bestMove = null;

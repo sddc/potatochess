@@ -40,7 +40,7 @@ public class Game {
 				case "print":
 					chessboard.print();
                     System.out.print("Score: ");
-                    System.out.println(Evaluation.materialScore(chessboard) / 100.0);
+                    System.out.println(Evaluation.score(chessboard) / 100.0);
 					if(activeColor == Board.WHITE) {
 						System.out.println("Active color: White (uppercase)");
 					} else {
@@ -55,7 +55,7 @@ public class Game {
                     System.out.println(Search.getBestMove(chessboard, 7, activeColor));
                     break;
                 case "cmove":
-                    Move bestMove = Search.getBestMove(chessboard, 7, activeColor);
+                    Move bestMove = Search.getBestMove(chessboard, 3, activeColor);
                     if(bestMove != null) {
                         chessboard.move(activeColor, bestMove);
                     }

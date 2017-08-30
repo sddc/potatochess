@@ -54,6 +54,10 @@ public class Board {
         return pieceCounts.clone();
     }
 
+    public long[] getBitboards() {
+        return bitboards.clone();
+    }
+
 	public boolean getActiveColor() {
 		return activeColor;
 	}
