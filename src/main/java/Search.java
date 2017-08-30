@@ -2,7 +2,7 @@ import java.util.ArrayList;
 
 public class Search {
     public static Move getBestMove(Board b, int depth, boolean side) {
-        ScoredMove sm = negamax(b, depth, Integer.MIN_VALUE, Integer.MAX_VALUE, side);
+        ScoredMove sm = negamax(b, depth, -1000000, 1000000, side);
         return sm.m;
     }
 
@@ -19,7 +19,7 @@ public class Search {
         }
         
         Move bestMove = null;
-        int bestScore= Integer.MIN_VALUE;
+        int bestScore = -1000000;
         int score;
 
         for(Move m : moves) {
