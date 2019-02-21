@@ -1,3 +1,5 @@
+package baked.potato;
+
 public enum Piece {
 	WHITE_PAWN(0),
 	WHITE_ROOK(1),

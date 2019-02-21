@@ -1,8 +1,7 @@
-import java.util.HashMap;
-import java.util.Map;
+package baked.potato;
 
 public class Move implements Comparable<Move> {
-	/* Move Encoding
+	/* baked.potato.Move Encoding
 	 * All flags:
 	 * 	1: true
 	 * 	0: false

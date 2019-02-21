@@ -1,4 +1,4 @@
-import java.util.ArrayList;
+package baked.potato;
 
 public class QueenMoveGen extends SlidingMoveGen {
 	private static QueenMoveGen instance = new QueenMoveGen();

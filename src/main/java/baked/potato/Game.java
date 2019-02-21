@@ -1,3 +1,5 @@
+package baked.potato;
+
 import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.Collections;
@@ -141,7 +143,7 @@ public class Game {
                     System.out.println("Checkmate. White has won.");
                 }
             } else {
-                System.out.println("Game is a draw.");
+                System.out.println("baked.potato.Game is a draw.");
             }
 
             return true;

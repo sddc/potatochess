@@ -1,3 +1,5 @@
+package baked.potato;
+
 import java.util.ArrayList;
 
 public class KingMoveGen extends MoveGen {

@@ -1,4 +1,4 @@
-import java.util.ArrayList;
+package baked.potato;
 
 public class KnightMoveGen extends MoveGen {
 	private static KnightMoveGen instance = new KnightMoveGen();

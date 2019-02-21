@@ -1,3 +1,5 @@
+package baked.potato;
+
 public class Evaluation {
     // table values from
     // https://chessprogramming.wikispaces.com/Simplified+evaluation+function

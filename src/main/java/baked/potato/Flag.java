@@ -1,3 +1,5 @@
+package baked.potato;
+
 public enum Flag {
 	DOUBLE_PAWN_PUSH,
 	CAPTURE,

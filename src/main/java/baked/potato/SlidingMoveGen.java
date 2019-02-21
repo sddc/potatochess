@@ -1,4 +1,5 @@
-import java.util.ArrayList;
+package baked.potato;
+
 import java.util.Arrays;
 
 public abstract class SlidingMoveGen extends MoveGen {

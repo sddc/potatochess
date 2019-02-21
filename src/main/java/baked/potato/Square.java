@@ -1,3 +1,5 @@
+package baked.potato;
+
 import java.util.HashMap;
 import java.util.Map;
 

@@ -1,4 +1,4 @@
-import java.util.ArrayList;
+package baked.potato;
 
 public class BishopMoveGen extends SlidingMoveGen {
 	private static BishopMoveGen instance = new BishopMoveGen();

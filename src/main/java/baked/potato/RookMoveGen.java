@@ -1,4 +1,4 @@
-import java.util.ArrayList;
+package baked.potato;
 
 public class RookMoveGen extends SlidingMoveGen {
 	private static RookMoveGen instance = new RookMoveGen();

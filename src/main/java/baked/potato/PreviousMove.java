@@ -1,3 +1,5 @@
+package baked.potato;
+
 public class PreviousMove {
 	public Move move;
 	public boolean[] castleStatus;

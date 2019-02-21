@@ -1,4 +1,5 @@
-import java.util.ArrayList;
+package baked.potato;
+
 import java.util.Deque;
 import java.util.ArrayDeque;
 
@@ -22,8 +23,8 @@ public class Board {
 	private boolean lastMoveDoublePawnPush;
 	private Square epTargetSquare;
 
-	/* Bitboard Board Representation
-	 * Square to bit mapping
+	/* Bitboard baked.potato.Board Representation
+	 * baked.potato.Square to bit mapping
 	 * H8 = MSB
 	 * A1 = LSB
 	 */

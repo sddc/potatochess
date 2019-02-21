@@ -1,3 +1,5 @@
+package baked.potato;
+
 public class ScoredMove {
     public Move m;
     public int score;
