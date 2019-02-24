@@ -41,6 +41,7 @@ public class Game {
 					break;
 				case "print":
 					chessboard.print();
+					System.out.println("Position Key: " + String.format("%016X", chessboard.getPositionKey()));
                     System.out.print("Score: ");
                     System.out.println(Evaluation.score(chessboard) / 100.0);
 					if(activeColor == Board.WHITE) {
@@ -115,10 +116,10 @@ public class Game {
 					}
 					break;
 				case "perft":
-					System.out.println("nodes: " + perft(activeColor, Integer.parseInt(command[1])));
+					System.out.println("nodes: " + perft(chessboard, chessboard.getActiveColor(), Integer.parseInt(command[1])));
 					break;
 				case "divide":
-					divide(activeColor, Integer.parseInt(command[1]), true);
+					divide(chessboard, chessboard.getActiveColor(), Integer.parseInt(command[1]), true);
 					break;
 				case "quit":
 				case "exit":
@@ -152,23 +153,23 @@ public class Game {
         return false;
     }
 
-	public int perft(boolean side, int depth) {
+	public static int perft(Board chessboard, boolean side, int depth) {
 		if(depth == 0) {
 			return 1;
 		}	
 
-		int Nodes = 0;
+		int nodes = 0;
 
 		ArrayList<Move> moves = MoveGen.getMoves(side);
 		for(Move m : moves) {
 			chessboard.move(side, m);
-			Nodes += perft(!side, depth-1);
-			chessboard.undoMove(side);
+			nodes += perft(chessboard, chessboard.toggleActiveColor(), depth-1);
+			chessboard.undoMove(chessboard.toggleActiveColor());
 		}
-		return Nodes;
+		return nodes;
 	}
 	
-	public int divide(boolean side, int depth, boolean initial) {
+	public static int divide(Board chessboard, boolean side, int depth, boolean initial) {
 		if(depth == 0) {
 			return 1;
 		}	
@@ -182,8 +183,8 @@ public class Game {
 		ArrayList<Move> moves = MoveGen.getMoves(side);
 		for(Move m : moves) {
 			chessboard.move(side, m);
-			Nodes += perft(!side, depth-1);
-			chessboard.undoMove(side);
+			Nodes += perft(chessboard, chessboard.toggleActiveColor(), depth-1);
+			chessboard.undoMove(chessboard.toggleActiveColor());
 
 			if(initial) {
 				results.add(new String(m.toString() + " " + Nodes));
@@ -200,7 +201,7 @@ public class Game {
 		return Nodes;
 	}
 
-	private Board parseFen(String position) {
+	public static Board parseFen(String position) {
 		long[] bitboards = new long[12];
 		Arrays.fill(bitboards, 0L);
 

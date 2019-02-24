@@ -8,7 +8,7 @@ public class Board {
 	public static final boolean BLACK = false;
 	public static final boolean KINGSIDE = true;
 	public static final boolean QUEENSIDE = false;
-	
+
 	/* castleStatus array 
 	 * 0 = white kingside not rook moved?
 	 * 1 = white queenside not rook moved?
@@ -32,6 +32,8 @@ public class Board {
 	private long whitePieces;
 	private long blackPieces;
     private int[] pieceCounts;
+
+    private long positionKey = 0;
 	
 	private Deque<PreviousMove> previousMoves = new ArrayDeque<PreviousMove>();
 
@@ -49,7 +51,48 @@ public class Board {
         for(int i = 0; i < 12; i++) {
             pieceCounts[i] = Long.bitCount(bitboards[i]);
         }
+
+		positionKeyInit();
 	}
+
+	private void positionKeyInit() {
+		positionKey = 0;
+
+		for(int i = 0; i < 64; i++) {
+			int pieceIdx = getPieceType(Square.toEnum(i)).intValue;
+
+			if(pieceIdx != 12) {
+				positionKey ^= Zobrist.randSquare[pieceIdx][i];
+			}
+		}
+
+		if(!activeColor) {
+			// xor if black
+			positionKey ^= Zobrist.randSide;
+		}
+
+		if(lastMoveDoublePawnPush) {
+			positionKey ^= Zobrist.randEp[epTargetSquare.intValue];
+		}
+
+		positionKey ^= Zobrist.randCastle[getCastlePosKey(castleStatus)];
+	}
+
+	private int getCastlePosKey(boolean[] castleStatus) {
+		int castleIdx = 0;
+
+		for(int i = 0, bit = 8; i < 4; i++, bit >>>= 1) {
+			if(castleStatus[i]) {
+				castleIdx += bit;
+			}
+		}
+
+		return castleIdx;
+	}
+
+    public long getPositionKey() {
+        return positionKey;
+    }
 
     public int[] getPieceCounts() {
         return pieceCounts.clone();
@@ -65,6 +108,9 @@ public class Board {
 
 	public boolean toggleActiveColor() {
 		activeColor = !activeColor;
+
+		positionKey ^= Zobrist.randSide;
+
 		return activeColor;
 	}
 
@@ -253,10 +299,15 @@ public class Board {
 		// move within bitboard
 		modify(pieceType, fromMask | toMask);
 
+		// update position key
+		positionKey ^= Zobrist.randSquare[pieceType.intValue][fromSquare.intValue];
+		positionKey ^= Zobrist.randSquare[pieceType.intValue][toSquare.intValue];
+
 		// remove bit from capture bitboard
 		if(m.getFlag(Flag.CAPTURE)) {
 			Piece capturePieceType = m.getCapturePieceType();
 			modify(capturePieceType, toMask);
+			positionKey ^= Zobrist.randSquare[capturePieceType.intValue][toSquare.intValue];
             pieceCounts[capturePieceType.intValue]--;
 
 			// castling checks
@@ -277,6 +328,10 @@ public class Board {
 			}
 		}
 
+		if(previousMoves.peekFirst().lastMoveDoublePawnPush) {
+			positionKey ^= Zobrist.randEp[previousMoves.peekFirst().epTargetSquare.intValue];
+		}
+
 		if(m.getFlag(Flag.DOUBLE_PAWN_PUSH)) {
 			lastMoveDoublePawnPush = true;
 			if(side == Board.WHITE) {
@@ -284,6 +339,8 @@ public class Board {
 			} else {
 				epTargetSquare = Square.toEnum(toSquare.intValue+8);
 			}
+
+			positionKey ^= Zobrist.randEp[epTargetSquare.intValue];
 		} else {
 			lastMoveDoublePawnPush = false;
 		}
@@ -291,9 +348,11 @@ public class Board {
 		if(m.getFlag(Flag.EP_CAPTURE)) {
 			if(side == Board.WHITE) {
 				modify(Piece.BLACK_PAWN, get1BitMask(Square.toEnum(toSquare.intValue-8)));
+				positionKey ^= Zobrist.randSquare[Piece.BLACK_PAWN.intValue][toSquare.intValue-8];
                 pieceCounts[Piece.BLACK_PAWN.intValue]--;
 			} else {
 				modify(Piece.WHITE_PAWN, get1BitMask(Square.toEnum(toSquare.intValue+8)));
+				positionKey ^= Zobrist.randSquare[Piece.WHITE_PAWN.intValue][toSquare.intValue+8];
                 pieceCounts[Piece.WHITE_PAWN.intValue]--;
 			}
 		}
@@ -303,10 +362,14 @@ public class Board {
 				// kingside castle
 				if(side == Board.WHITE) {
 					modify(Piece.WHITE_ROOK, get1BitMask(Square.H1) | get1BitMask(Square.F1));
+					positionKey ^= Zobrist.randSquare[Piece.WHITE_ROOK.intValue][Square.H1.intValue];
+					positionKey ^= Zobrist.randSquare[Piece.WHITE_ROOK.intValue][Square.F1.intValue];
 					castleStatus[0] = false;
 					castleStatus[1] = false;
 				} else {
 					modify(Piece.BLACK_ROOK, get1BitMask(Square.H8) | get1BitMask(Square.F8));
+					positionKey ^= Zobrist.randSquare[Piece.BLACK_ROOK.intValue][Square.H8.intValue];
+					positionKey ^= Zobrist.randSquare[Piece.BLACK_ROOK.intValue][Square.F8.intValue];
 					castleStatus[2] = false;
 					castleStatus[3] = false;
 				}
@@ -314,10 +377,14 @@ public class Board {
 				// queenside castle
 				if(side == Board.WHITE) {
 					modify(Piece.WHITE_ROOK, get1BitMask(Square.A1) | get1BitMask(Square.D1));
+					positionKey ^= Zobrist.randSquare[Piece.WHITE_ROOK.intValue][Square.A1.intValue];
+					positionKey ^= Zobrist.randSquare[Piece.WHITE_ROOK.intValue][Square.D1.intValue];
 					castleStatus[0] = false;
 					castleStatus[1] = false;
 				} else {
 					modify(Piece.BLACK_ROOK, get1BitMask(Square.A8) | get1BitMask(Square.D8));
+					positionKey ^= Zobrist.randSquare[Piece.BLACK_ROOK.intValue][Square.A8.intValue];
+					positionKey ^= Zobrist.randSquare[Piece.BLACK_ROOK.intValue][Square.D8.intValue];
 					castleStatus[2] = false;
 					castleStatus[3] = false;
 				}
@@ -327,11 +394,13 @@ public class Board {
 		if(m.getFlag(Flag.PROMOTION)) {
 			// remove bit from pawn bitboard
 			modify(pieceType, toMask);
+			positionKey ^= Zobrist.randSquare[pieceType.intValue][toSquare.intValue];
             pieceCounts[pieceType.intValue]--;
 
 			// add bit to chosen piece
             Piece promotionType = m.getPromotionType();
 			modify(promotionType, toMask);
+			positionKey ^= Zobrist.randSquare[promotionType.intValue][toSquare.intValue];
             pieceCounts[promotionType.intValue]++;
 		}
 
@@ -360,7 +429,14 @@ public class Board {
 
 		if(pieceType == Piece.BLACK_ROOK && fromSquare == Square.A8) {
 			castleStatus[3] = false;
-		}	
+		}
+
+		int castleIdx = getCastlePosKey(castleStatus);
+		int prevCastleIdx = getCastlePosKey(previousMoves.peekFirst().castleStatus);
+		if(castleIdx != prevCastleIdx) {
+			positionKey ^= Zobrist.randCastle[prevCastleIdx];
+			positionKey ^= Zobrist.randCastle[castleIdx];
+		}
 	}
 
 	public void undoMove(boolean side) {
@@ -371,9 +447,25 @@ public class Board {
 		// get move information for previous move
 		PreviousMove pm = previousMoves.removeFirst();
 		Move m = pm.move;
+
+		int prevCastleIdx = getCastlePosKey(castleStatus);
 		castleStatus = pm.castleStatus;
+		int castleIdx = getCastlePosKey(castleStatus);
+		if(castleIdx != prevCastleIdx) {
+			positionKey ^= Zobrist.randCastle[prevCastleIdx];
+			positionKey ^= Zobrist.randCastle[castleIdx];
+		}
+
+		if(lastMoveDoublePawnPush) {
+			positionKey ^= Zobrist.randEp[epTargetSquare.intValue];
+		}
+
 		lastMoveDoublePawnPush = pm.lastMoveDoublePawnPush;
 		epTargetSquare = pm.epTargetSquare;
+
+		if(lastMoveDoublePawnPush) {
+			positionKey ^= Zobrist.randEp[epTargetSquare.intValue];
+		}
 
 		Square fromSquare = m.getFromSquare();
 		Square toSquare = m.getToSquare();
@@ -384,10 +476,14 @@ public class Board {
 		// restore move within bitboard
 		modify(pieceType, fromMask | toMask);
 
+		positionKey ^= Zobrist.randSquare[pieceType.intValue][fromSquare.intValue];
+		positionKey ^= Zobrist.randSquare[pieceType.intValue][toSquare.intValue];
+
 		// restore bit from capture bitboard
 		if(m.getFlag(Flag.CAPTURE)) {
 			Piece capturePieceType = m.getCapturePieceType();
 			modify(capturePieceType, toMask);
+			positionKey ^= Zobrist.randSquare[capturePieceType.intValue][toSquare.intValue];
             pieceCounts[capturePieceType.intValue]++;
 		}
 
@@ -395,9 +491,11 @@ public class Board {
 		if(m.getFlag(Flag.EP_CAPTURE)) {
 			if(side == Board.WHITE) {
 				modify(Piece.BLACK_PAWN, get1BitMask(Square.toEnum(toSquare.intValue-8)));
+				positionKey ^= Zobrist.randSquare[Piece.BLACK_PAWN.intValue][toSquare.intValue-8];
                 pieceCounts[Piece.BLACK_PAWN.intValue]++;
 			} else {
 				modify(Piece.WHITE_PAWN, get1BitMask(Square.toEnum(toSquare.intValue+8)));
+				positionKey ^= Zobrist.randSquare[Piece.WHITE_PAWN.intValue][toSquare.intValue+8];
                 pieceCounts[Piece.WHITE_PAWN.intValue]++;
 			}
 		}
@@ -408,15 +506,23 @@ public class Board {
 				// kingside castle
 				if(side == Board.WHITE) {
 					modify(Piece.WHITE_ROOK, get1BitMask(Square.H1) | get1BitMask(Square.F1));
+					positionKey ^= Zobrist.randSquare[Piece.WHITE_ROOK.intValue][Square.H1.intValue];
+					positionKey ^= Zobrist.randSquare[Piece.WHITE_ROOK.intValue][Square.F1.intValue];
 				} else {
 					modify(Piece.BLACK_ROOK, get1BitMask(Square.H8) | get1BitMask(Square.F8));
+					positionKey ^= Zobrist.randSquare[Piece.BLACK_ROOK.intValue][Square.H8.intValue];
+					positionKey ^= Zobrist.randSquare[Piece.BLACK_ROOK.intValue][Square.F8.intValue];
 				}
 			} else {
 				// queenside castle
 				if(side == Board.WHITE) {
 					modify(Piece.WHITE_ROOK, get1BitMask(Square.A1) | get1BitMask(Square.D1));
+					positionKey ^= Zobrist.randSquare[Piece.WHITE_ROOK.intValue][Square.A1.intValue];
+					positionKey ^= Zobrist.randSquare[Piece.WHITE_ROOK.intValue][Square.D1.intValue];
 				} else {
 					modify(Piece.BLACK_ROOK, get1BitMask(Square.A8) | get1BitMask(Square.D8));
+					positionKey ^= Zobrist.randSquare[Piece.BLACK_ROOK.intValue][Square.A8.intValue];
+					positionKey ^= Zobrist.randSquare[Piece.BLACK_ROOK.intValue][Square.D8.intValue];
 				}
 			}
 		}
@@ -425,11 +531,13 @@ public class Board {
 		if(m.getFlag(Flag.PROMOTION)) {
 			// restore bit from pawn bitboard
 			modify(pieceType, toMask);
+			positionKey ^= Zobrist.randSquare[pieceType.intValue][toSquare.intValue];
             pieceCounts[pieceType.intValue]++;
 
 			// remove bit from chosen piece
             Piece promotionType = m.getPromotionType();
 			modify(promotionType, toMask);
+			positionKey ^= Zobrist.randSquare[promotionType.intValue][toSquare.intValue];
             pieceCounts[promotionType.intValue]--;
 		}
 	}
