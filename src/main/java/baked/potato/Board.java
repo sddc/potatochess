@@ -37,6 +37,8 @@ public class Board {
 	
 	private Deque<PreviousMove> previousMoves = new ArrayDeque<PreviousMove>();
 
+	public static final TT tt = new TT(64);
+
 	public Board(long[] bitboards, boolean[] castleStatus, boolean lastMoveDoublePawnPush, Square epTargetSquare, boolean activeColor) {
 		this.bitboards = bitboards;
 		this.castleStatus = castleStatus;

@@ -127,4 +127,24 @@ public class BoardTest {
         assertEquals(expectedPerftResult, perftResult);
         assertEquals(expectedPosKey, cb.getPositionKey());
     }
+
+    @Test
+    public void testTT() {
+        Board cb = Game.parseFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+        assertEquals(null, cb.tt.get(cb.getPositionKey()));
+
+        cb.tt.put(cb.getPositionKey(), 0, 0, 0, 0);
+        assertNotEquals(null, cb.tt.get(cb.getPositionKey()));
+
+        cb.tt.incAge();
+        cb.tt.put(cb.getPositionKey(), 0, 0, 1, 0);
+        assertNotEquals(null, cb.tt.get(cb.getPositionKey()));
+
+        cb.tt.put(cb.getPositionKey(), 0, 0, 2, 0);
+        assertEquals(1, cb.tt.get(cb.getPositionKey()).age);
+        assertEquals(2, cb.tt.get(cb.getPositionKey()).depth);
+
+        cb.tt.clear();
+        assertEquals(null, cb.tt.get(cb.getPositionKey()));
+    }
 }

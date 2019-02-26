@@ -28,7 +28,7 @@ public class Zobrist {
 
             do {
                 rn = rand.nextLong();
-            } while(rn == 0 || randomNums.contains(rn));
+            } while(rn <= 0 || randomNums.contains(rn));
 
             randomNums.add(rn);
         }
