@@ -34,6 +34,8 @@ public class Board {
     private int[] pieceCounts;
 
     private long positionKey = 0;
+
+    private int ply = 0;
 	
 	private Deque<PreviousMove> previousMoves = new ArrayDeque<PreviousMove>();
 
@@ -55,6 +57,7 @@ public class Board {
         }
 
 		positionKeyInit();
+        ply = 0;
 	}
 
 	private void positionKeyInit() {
@@ -287,6 +290,7 @@ public class Board {
 	}
 
 	public void move(boolean side, Move m) {
+		ply++;
 		// assumes m is at least pseudo legal
 
 		// save move to undo
@@ -442,6 +446,7 @@ public class Board {
 	}
 
 	public void undoMove(boolean side) {
+		ply--;
 		if(previousMoves.isEmpty()) {
 			return;
 		}
@@ -584,5 +589,9 @@ public class Board {
 		} else {
 			return false;
 		}
+	}
+
+	public int getPly() {
+		return ply;
 	}
 }

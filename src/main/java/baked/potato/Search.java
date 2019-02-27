@@ -3,44 +3,95 @@ package baked.potato;
 import java.util.ArrayList;
 
 public class Search {
-    public static Move getBestMove(Board b, int depth, boolean side) {
-        ScoredMove sm = negamax(b, depth, -1000000, 1000000, side);
-        return sm.m;
+    public static final int INFINITY = 1000000;
+    public static final int MAX_PLY = 64;
+    public static final int MATE = 30000;
+    public static final int MAX_MATE = MATE - MAX_PLY;
+
+    public static void search(Board b, int depth, boolean side) {
+
+        for(int d = 1; d <= depth; d++) {
+            b.tt.incAge();
+            int bestScore = negamax(b, d, -INFINITY, INFINITY, side);
+            Move bestMove = new Move(b.tt.get(b.getPositionKey()).bestMove);
+            System.out.println("info depth " + d + " score " + bestScore + " bestmove " + bestMove);
+        }
+
+        Move bestMove = new Move(b.tt.get(b.getPositionKey()).bestMove);
+        System.out.println("bestmove " + bestMove);
     }
 
-    private static ScoredMove negamax(Board b, int depth, int alpha, int beta, boolean side) {
-        int color = side ? 1 : -1;
+    private static int negamax(Board b, int depth, int alpha, int beta, boolean side) {
+        int oldAlpha = alpha;
+
+        TTEntry ttEntry = b.tt.get(b.getPositionKey());
+        if(ttEntry != null && ttEntry.depth >= depth) {
+            int score = ttEntry.score;
+
+            if(Math.abs(score) >= MAX_MATE) {
+                score = score < 0 ? score + b.getPly() : score - b.getPly();
+            }
+
+            if((ttEntry.flag & TTEntry.flagPvNode) != 0) {
+                return score;
+            } else if((ttEntry.flag & TTEntry.flagCutNode) != 0) {
+                alpha = Math.max(alpha, score);
+            } else if((ttEntry.flag & TTEntry.flagAllNode) != 0) {
+                beta = Math.min(beta, score);
+            }
+
+            if(alpha >= beta) {
+                return score;
+            }
+        }
+
+        int color = side ? -1 : 1;
 
         if(depth == 0) {
-            return new ScoredMove(null, Evaluation.score(b) * color);
+            return Evaluation.score(b) * color;
         }
 
         ArrayList<Move> moves = MoveGen.getMoves(side);
         if(moves.size() == 0) {
-            return new ScoredMove(null, Evaluation.score(b) * color);
+            if(MoveGen.isKingInCheck(side)) {
+                return -MATE + b.getPly();
+            } else {
+                return 0;
+            }
         }
-        
-        Move bestMove = null;
-        int bestScore = -1000000;
-        int score;
 
+        Move bestMove = null;
         for(Move m : moves) {
             b.move(side, m);
-            ScoredMove sm = negamax(b, depth - 1, -beta, -alpha, !side);
-            b.undoMove(side);
-            sm.score *= -1;
+            int eval = -negamax(b, depth - 1, -beta, -alpha, b.toggleActiveColor());
+            b.undoMove(b.toggleActiveColor());
 
-            if(sm.score > bestScore) {
-                bestScore = sm.score;
+            if(eval > alpha) {
+                alpha = eval;
                 bestMove = m;
-            }
 
-            alpha = Math.max(sm.score, alpha);
-            if(alpha >= beta) {
-                break;
+                if(alpha >= beta) {
+                    break;
+                }
             }
         }
 
-        return new ScoredMove(bestMove, bestScore);
+        int flag;
+        if(alpha <= oldAlpha) {
+            flag = TTEntry.flagAllNode;
+        } else if(alpha >= beta) {
+            flag = TTEntry.flagCutNode;
+        } else {
+            flag = TTEntry.flagPvNode;
+        }
+
+        if(Math.abs(alpha) >= MAX_MATE) {
+            int rel_alpha = alpha < 0 ? alpha - b.getPly() : alpha + b.getPly();
+            b.tt.put(b.getPositionKey(), bestMove != null ? bestMove.move : 0, rel_alpha, depth, flag);
+        } else {
+            b.tt.put(b.getPositionKey(), bestMove != null ? bestMove.move : 0, alpha, depth, flag);
+        }
+
+        return alpha;
     }
 }

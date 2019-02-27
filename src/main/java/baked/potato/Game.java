@@ -55,21 +55,24 @@ public class Game {
 					}
 					break;
                 case "bestmove":
-                    System.out.println(Search.getBestMove(chessboard, 7, activeColor));
+//                    System.out.println(Search.getBestMove(chessboard, 7, activeColor));
                     break;
                 case "cmove":
-                    Move bestMove = Search.getBestMove(chessboard, 3, activeColor);
-                    if(bestMove != null) {
-                        chessboard.move(activeColor, bestMove);
-                    }
-
-                    activeColor = chessboard.toggleActiveColor();
-                    moves = MoveGen.getMoves(activeColor);
-                    // check if game is over for opponent
-                    if(gameOver()) {
-                        return;
-                    }
+//                    Move bestMove = Search.getBestMove(chessboard, 3, activeColor);
+//                    if(bestMove != null) {
+//                        chessboard.move(activeColor, bestMove);
+//                    }
+//
+//                    activeColor = chessboard.toggleActiveColor();
+//                    moves = MoveGen.getMoves(activeColor);
+//                    // check if game is over for opponent
+//                    if(gameOver()) {
+//                        return;
+//                    }
                     break;
+				case "search":
+					Search.search(chessboard, 4, chessboard.getActiveColor());
+					break;
 				case "move":
 					if(command.length == 2) {
 						if(command[1].length() == 4 || command[1].length() == 5) {

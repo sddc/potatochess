@@ -24,7 +24,7 @@ public class Move implements Comparable<Move> {
 	 * Bits 28-31: promotion type
 	 * MSB
 	 */
-	private int move = 0;
+	public int move = 0;
 
 	public Move(Square from, Square to, Piece type) {
 		// to square
@@ -34,6 +34,10 @@ public class Move implements Comparable<Move> {
 		move |= from.intValue;
 		// piece type
 		move |= (type.intValue << 12);
+	}
+
+	public Move(int move) {
+		this.move = move;
 	}
 
 	public Square getFromSquare() {
