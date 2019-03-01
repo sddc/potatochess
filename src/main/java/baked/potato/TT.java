@@ -32,7 +32,7 @@ public class TT {
     public void put(long positionKey, int bestMove, int score, int depth, int flag) {
         int i = (int)(positionKey % entries.length);
 
-        if(entries[i].flag == 0 || entries[i].age != age || entries[i].depth > depth) {
+        if(entries[i].flag == 0 || entries[i].age != age || entries[i].depth <= depth) {
             entries[i].positionKey = positionKey;
             entries[i].bestMove = bestMove;
             entries[i].score = score;

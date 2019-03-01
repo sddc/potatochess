@@ -12,6 +12,8 @@ public class Game {
 	private ArrayList<Move> moves;
 	private static final String initialPosition = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 	private boolean activeColor;
+	private Search search;
+	private Thread searchThread;
 
 	public Game() {
 		chessboard = parseFen(initialPosition);
@@ -68,6 +70,79 @@ public class Game {
 						}
 					}
 					break;
+				case "go":
+					int time = 0;
+					int increment = 0;
+					int movesToGo = 30;
+					int depth = 0;
+
+					for(int i = 1; i < command.length;) {
+						switch(command[i]) {
+							case "wtime":
+								if(chessboard.getActiveColor() == Board.WHITE) {
+									time = Integer.parseInt(command[i + 1]);
+								}
+								i += 2;
+								break;
+							case "btime":
+								if(chessboard.getActiveColor() == Board.BLACK) {
+									time = Integer.parseInt(command[i + 1]);
+								}
+								i += 2;
+								break;
+							case "winc":
+								if(chessboard.getActiveColor() == Board.WHITE) {
+									increment = Integer.parseInt(command[i + 1]);
+								}
+								i += 2;
+								break;
+							case "binc":
+								if(chessboard.getActiveColor() == Board.BLACK) {
+									increment = Integer.parseInt(command[i + 1]);
+								}
+								i += 2;
+								break;
+							case "movestogo":
+								movesToGo = Integer.parseInt(command[i + 1]);
+								i += 2;
+								break;
+							case "depth":
+								depth = Integer.parseInt(command[i + 1]);
+								i += 2;
+								break;
+							case "movetime":
+								time = Integer.parseInt(command[i + 1]);
+								movesToGo = 1;
+								i += 2;
+								break;
+							case "infinite":
+								i++;
+								break;
+							default:
+								break;
+						}
+					}
+
+//					System.out.printf("time %d increment %d movestogo %d depth %d\n", time, increment, movesToGo, depth);
+					time = (time / movesToGo) + increment;
+//					System.out.println("calculated time: " + time);
+
+					search = new Search(chessboard, depth, time);
+					searchThread = new Thread(search);
+					searchThread.start();
+
+					break;
+				case "stop":
+					if(searchThread != null && searchThread.isAlive()) {
+						search.stop();
+						try {
+							searchThread.join();
+						} catch(InterruptedException ie) {
+
+						}
+					}
+
+					break;
 				case "moves":
 					Collections.sort(moves);
 					for(Move m : moves) {
@@ -107,7 +182,7 @@ public class Game {
 //                    }
                     break;
 				case "search":
-					Search.search(chessboard, 10, chessboard.getActiveColor());
+					//Search.search(chessboard, 10, chessboard.getActiveColor());
 					break;
 				case "move":
 					if(command.length == 2) {
@@ -162,6 +237,14 @@ public class Game {
 					break;
 				case "quit":
 				case "exit":
+					if(searchThread != null && searchThread.isAlive()) {
+						search.stop();
+						try {
+							searchThread.join();
+						} catch(InterruptedException ie) {
+
+						}
+					}
 					return;
 				default:
 					if(command[0].length() == 0) {
