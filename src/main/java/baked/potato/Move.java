@@ -1,5 +1,7 @@
 package baked.potato;
 
+import java.util.Objects;
+
 public class Move implements Comparable<Move> {
 	/* baked.potato.Move Encoding
 	 * All flags:
@@ -163,6 +165,19 @@ public class Move implements Comparable<Move> {
 	@Override
 	public int compareTo(Move m) {
 		return toString().compareTo(m.toString());
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if(obj == this) return true;
+		if(obj == null || !(obj instanceof Move)) return false;
+		Move move = (Move) obj;
+		return this.move == move.move;
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hashCode(this.move);
 	}
 
 }

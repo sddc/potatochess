@@ -7,22 +7,52 @@ public class Search {
     public static final int MAX_PLY = 64;
     public static final int MATE = 30000;
     public static final int MAX_MATE = MATE - MAX_PLY;
+    private static int nodes = 0;
 
     public static void search(Board b, int depth, boolean side) {
-
         for(int d = 1; d <= depth; d++) {
+            long start = System.nanoTime();
             b.tt.incAge();
+            nodes = 0;
             int bestScore = negamax(b, d, -INFINITY, INFINITY, side);
-            Move bestMove = new Move(b.tt.get(b.getPositionKey()).bestMove);
-            System.out.println("info depth " + d + " score " + bestScore + " bestmove " + bestMove);
+            double elapsed = (System.nanoTime() - start) * 1e-6;
+            double nps = nodes / (elapsed * 1e-3);
+
+            System.out.printf("info depth %d score cp %d time %.0f nodes %d nps %.0f pv %s\n", d, bestScore, elapsed, nodes, nps, pv(b, d));
         }
 
         Move bestMove = new Move(b.tt.get(b.getPositionKey()).bestMove);
         System.out.println("bestmove " + bestMove);
     }
 
+    private static String pv(Board b, int depth) {
+        TTEntry ttEntry = b.tt.get(b.getPositionKey());
+        String result = "";
+        int initialPly = b.getPly();
+        for(int i = 0; i < depth && ttEntry != null; i++) {
+            Move m = new Move(ttEntry.bestMove);
+
+            ArrayList<Move> moves = MoveGen.getMoves(b.getActiveColor());
+            if(moves.contains(m)) {
+                b.move(b.getActiveColor(), m);
+                b.toggleActiveColor();
+                result += result.length() > 0 ? " " + m.toString() : m.toString();
+                ttEntry = b.tt.get(b.getPositionKey());
+            } else {
+                break;
+            }
+        }
+
+        while(b.getPly() > initialPly) {
+            b.undoMove(b.toggleActiveColor());
+        }
+
+        return result;
+    }
+
     private static int negamax(Board b, int depth, int alpha, int beta, boolean side) {
         int oldAlpha = alpha;
+        nodes++;
 
         TTEntry ttEntry = b.tt.get(b.getPositionKey());
         if(ttEntry != null && ttEntry.depth >= depth) {

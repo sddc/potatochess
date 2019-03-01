@@ -25,13 +25,49 @@ public class Game {
 		Scanner input = new Scanner(System.in);
 		String[] command;
 		String preSplitCommand;
-		
-		System.out.print("> ");
+
 		while(input.hasNextLine()) {
-			preSplitCommand = input.nextLine();
+			preSplitCommand = input.nextLine().trim();
 			command = preSplitCommand.split(" ");
 
 			switch(command[0]) {
+				case "uci":
+					System.out.println("id name Potatochess");
+					System.out.println("id author Sean D");
+					System.out.println("uciok");
+					break;
+				case "isready":
+					System.out.println("readyok");
+					break;
+				case "ucinewgame":
+					chessboard.tt.clear();
+					break;
+				case "position":
+					int moveskip = 2;
+					if(command[1].equals("startpos")) {
+						chessboard = parseFen(initialPosition);
+						MoveGen.setBoard(chessboard);
+					} else if(command[1].equals("fen")) {
+						String fen = "";
+						for(int i = 2; i < 8; i++) {
+							fen += command[i];
+							if(i < 7) fen += " ";
+						}
+						chessboard = parseFen(fen);
+						MoveGen.setBoard(chessboard);
+						moveskip = 8;
+					}
+
+					for(int i = moveskip; i < command.length; i++) {
+						for(Move m : MoveGen.getMoves(chessboard.getActiveColor())) {
+							if(m.toString().equals(command[i])) {
+								chessboard.move(chessboard.getActiveColor(), m);
+								chessboard.toggleActiveColor();
+								break;
+							}
+						}
+					}
+					break;
 				case "moves":
 					Collections.sort(moves);
 					for(Move m : moves) {
@@ -71,7 +107,7 @@ public class Game {
 //                    }
                     break;
 				case "search":
-					Search.search(chessboard, 4, chessboard.getActiveColor());
+					Search.search(chessboard, 10, chessboard.getActiveColor());
 					break;
 				case "move":
 					if(command.length == 2) {
@@ -134,7 +170,6 @@ public class Game {
 					}
 					break;
 			}
-			System.out.print("> ");
 		}
 	}
 
