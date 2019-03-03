@@ -31,8 +31,8 @@ public class Search implements Runnable {
 
     public void search(Board b, int depth, boolean side) {
         b.tt.incAge();
+
         for(int d = 1; d <= depth; d++) {
-            //b.tt.incAge();
             nodes = 0;
             long start = System.nanoTime();
             int bestScore = negamax(b, d, -INFINITY, INFINITY, side);
@@ -105,7 +105,7 @@ public class Search implements Runnable {
             }
         }
 
-        int color = side ? -1 : 1;
+        int color = side ? 1 : -1;
 
         if(depth == 0) {
             return Evaluation.score(b) * color;
