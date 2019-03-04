@@ -14,9 +14,13 @@ public class KingMoveGen extends MoveGen {
 	}
 
 	@Override
-	public ArrayList<Move> generateMoves(boolean side) {
-		ArrayList<Move> moves = super.generateMoves(side);
-		genCastlingMoves(side, moves);
+	public ArrayList<Move> generateMoves(boolean side, boolean captureMovesOnly) {
+		ArrayList<Move> moves = super.generateMoves(side, captureMovesOnly);
+
+		if(!captureMovesOnly) {
+			genCastlingMoves(side, moves);
+		}
+
 		return moves;
 	}
 

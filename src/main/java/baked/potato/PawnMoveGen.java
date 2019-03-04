@@ -14,32 +14,34 @@ public class PawnMoveGen extends MoveGen {
 	}
 
 	@Override
-	public ArrayList<Move> generateMoves(boolean side) {
+	public ArrayList<Move> generateMoves(boolean side, boolean captureMovesOnly) {
 		ArrayList<Move> moves = new ArrayList<Move>();
 
 		for(Square fromSquare : getOccupancyIndexes(board.getPawnBitboard(side))) {
 			long moveBitboard;
 
-			// double pawn push
-			moveBitboard = genDoublePawnPush(side, getSquareMask(fromSquare), board.getAllPieces());
-			for(Square toSquare : getOccupancyIndexes(moveBitboard)) {
-				Move move = new Move(fromSquare, toSquare, sidePiece(side));
-				move.setFlag(Flag.DOUBLE_PAWN_PUSH);
-
-				if(isValidMove(side, move)) {
-					moves.add(move);
-				}
-			}
-
-			// pawn push
-			moveBitboard = genPawnPush(side, getSquareMask(fromSquare), board.getAllPieces());
-			for(Square toSquare : getOccupancyIndexes(moveBitboard)) {
-				if(isPromotion(toSquare)) {
-					genPromotionMoves(side, false, fromSquare, toSquare, moves);
-				} else {
+			if(!captureMovesOnly) {
+				// double pawn push
+				moveBitboard = genDoublePawnPush(side, getSquareMask(fromSquare), board.getAllPieces());
+				for (Square toSquare : getOccupancyIndexes(moveBitboard)) {
 					Move move = new Move(fromSquare, toSquare, sidePiece(side));
-					if(isValidMove(side, move)) {
+					move.setFlag(Flag.DOUBLE_PAWN_PUSH);
+
+					if (isValidMove(side, move)) {
 						moves.add(move);
+					}
+				}
+
+				// pawn push
+				moveBitboard = genPawnPush(side, getSquareMask(fromSquare), board.getAllPieces());
+				for (Square toSquare : getOccupancyIndexes(moveBitboard)) {
+					if (isPromotion(toSquare)) {
+						genPromotionMoves(side, false, fromSquare, toSquare, moves);
+					} else {
+						Move move = new Move(fromSquare, toSquare, sidePiece(side));
+						if (isValidMove(side, move)) {
+							moves.add(move);
+						}
 					}
 				}
 			}
@@ -57,6 +59,7 @@ public class PawnMoveGen extends MoveGen {
 
 				if(board.lastMoveDPP() && (toSquare == board.getEpTargetSquare())) {
 					move.setFlag(Flag.EP_CAPTURE);
+					move.score = 99;
 					if(side == Board.WHITE) {
 						move.setCapturePieceType(Piece.BLACK_PAWN);
 					} else {
@@ -71,6 +74,7 @@ public class PawnMoveGen extends MoveGen {
 					} else {
 						Piece type = board.getPieceType(toSquare);
 						move.setFlag(Flag.CAPTURE);
+						move.score = pieceValues[type.intValue] * 100 - pieceValues[sidePiece(side).intValue];
 						move.setCapturePieceType(type);
 						if(isValidMove(side, move)) {
 							moves.add(move);
@@ -109,6 +113,7 @@ public class PawnMoveGen extends MoveGen {
 				Piece type = board.getPieceType(toSquare);
 				p.setCapturePieceType(type);
 				p.setFlag(Flag.CAPTURE);
+				p.score = pieceValues[type.intValue] * 100 - pieceValues[sidePiece(side).intValue];
 			}
 			p.setFlag(Flag.PROMOTION);
 			if(isValidMove(side, p)) {

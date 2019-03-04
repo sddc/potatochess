@@ -27,6 +27,7 @@ public class Move implements Comparable<Move> {
 	 * MSB
 	 */
 	public int move = 0;
+	public int score = 0;
 
 	public Move(Square from, Square to, Piece type) {
 		// to square
@@ -140,19 +141,19 @@ public class Move implements Comparable<Move> {
 			switch(getPromotionType()) {
 				case WHITE_QUEEN:
 				case BLACK_QUEEN:
-					output.append("Q");
+					output.append("q");
 					break;
 				case WHITE_ROOK:
 				case BLACK_ROOK:
-					output.append("R");
+					output.append("r");
 					break;
 				case WHITE_KNIGHT:
 				case BLACK_KNIGHT:
-					output.append("N");
+					output.append("n");
 					break;
 				case WHITE_BISHOP:
 				case BLACK_BISHOP:
-					output.append("B");
+					output.append("b");
 					break;
 				default:
 					break;

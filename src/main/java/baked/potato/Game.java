@@ -144,18 +144,28 @@ public class Game {
 
 					break;
 				case "moves":
+					moves = MoveGen.getMoves(chessboard.getActiveColor());
 					Collections.sort(moves);
 					for(Move m : moves) {
 						System.out.println(m.toString());
 					}
 					System.out.println(moves.size() + " moves");
+//					ArrayList<Move> mvlist = MoveGen.getCaptureMoves(chessboard.getActiveColor());
+//					Move testPvMove = new Move(Square.F3, Square.H3, Piece.WHITE_QUEEN);
+//					testPvMove.setFlag(Flag.CAPTURE);
+//					testPvMove.setCapturePieceType(Piece.BLACK_PAWN);
+//					System.out.println(mvlist.contains(testPvMove));
+//					MoveGen.sortMoves(mvlist, testPvMove);
+//					for(Move m : mvlist) {
+//						System.out.println(m);
+//					}
 					break;
 				case "print":
 					chessboard.print();
 					System.out.println("Position Key: " + String.format("%016X", chessboard.getPositionKey()));
                     System.out.print("Score: ");
                     System.out.println(Evaluation.score(chessboard) / 100.0);
-					if(activeColor == Board.WHITE) {
+					if(chessboard.getActiveColor() == Board.WHITE) {
 						System.out.println("Active color: White (uppercase)");
 					} else {
 						System.out.println("Active color: Black (lowercase)");

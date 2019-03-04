@@ -32,6 +32,7 @@ public class Search implements Runnable {
     public void search(Board b, int depth, boolean side) {
         b.tt.incAge();
 
+        Move bestMove = null;
         for(int d = 1; d <= depth; d++) {
             nodes = 0;
             long start = System.nanoTime();
@@ -41,9 +42,9 @@ public class Search implements Runnable {
             double nps = nodes / (elapsed * 1e-3);
 
             System.out.printf("info depth %d score cp %d time %.0f nodes %d nps %.0f pv %s\n", d, bestScore, elapsed, nodes, nps, pv(b, d));
+            bestMove = new Move(b.tt.get(b.getPositionKey()).bestMove);
         }
 
-        Move bestMove = new Move(b.tt.get(b.getPositionKey()).bestMove);
         System.out.println("bestmove " + bestMove);
     }
 
@@ -81,27 +82,33 @@ public class Search implements Runnable {
         int oldAlpha = alpha;
         nodes++;
 
+        Move pvMove = null;
         TTEntry ttEntry = b.tt.get(b.getPositionKey());
-        if(ttEntry != null && ttEntry.depth >= depth) {
-            int score = ttEntry.score;
+        if(ttEntry != null) {
+            if(ttEntry.depth >= depth) {
+                int score = ttEntry.score;
 
-            if(Math.abs(score) >= MAX_MATE) {
-                score = score < 0 ? score + b.getPly() : score - b.getPly();
-            }
+                if (Math.abs(score) >= MAX_MATE) {
+                    score = score < 0 ? score + b.getPly() : score - b.getPly();
+                }
 
-            if((ttEntry.flag & TTEntry.flagPvNode) != 0) {
-                // exact
-                return score;
-            } else if((ttEntry.flag & TTEntry.flagCutNode) != 0) {
-                // lowerbound
-                alpha = Math.max(alpha, score);
-            } else if((ttEntry.flag & TTEntry.flagAllNode) != 0) {
-                // upperbound
-                beta = Math.min(beta, score);
-            }
+                if ((ttEntry.flag & TTEntry.flagPvNode) != 0) {
+                    // exact
+                    return score;
+                } else if ((ttEntry.flag & TTEntry.flagCutNode) != 0) {
+                    // lowerbound
+                    alpha = Math.max(alpha, score);
+                } else if ((ttEntry.flag & TTEntry.flagAllNode) != 0) {
+                    // upperbound
+                    beta = Math.min(beta, score);
+                }
 
-            if(alpha >= beta) {
-                return score;
+                if (alpha >= beta) {
+                    return score;
+                }
+            } else if((ttEntry.flag & TTEntry.flagPvNode) != 0) {
+                pvMove = new Move(ttEntry.bestMove);
+                //System.out.println("pv move set as: " + pvMove);
             }
         }
 
@@ -120,7 +127,9 @@ public class Search implements Runnable {
             }
         }
 
+        MoveGen.sortMoves(moves, pvMove);
         Move bestMove = null;
+        //System.out.println("depth " + depth + " leftmost move is: " + moves.get(0));
         for(Move m : moves) {
             b.move(side, m);
             int eval = -negamax(b, depth - 1, -beta, -alpha, b.toggleActiveColor());
