@@ -4,6 +4,7 @@ import java.lang.UnsupportedOperationException;
 
 public class PawnMoveGen extends MoveGen {
 	private static PawnMoveGen instance = new PawnMoveGen();
+	public static final long[][] pawnAttackMoves = genPawnAttackMoves();
 
 	private PawnMoveGen() {
 	}
@@ -58,7 +59,8 @@ public class PawnMoveGen extends MoveGen {
 			}
 
 			// todo: pawn attack lookup table
-			moveBitboard = opponentPieces & genPawnAttack(side, 1L << fromSquare, b.getSidePieces(side));
+//			moveBitboard = opponentPieces & genPawnAttack(side, 1L << fromSquare, b.getSidePieces(side));
+			moveBitboard = opponentPieces & pawnAttackMoves[side ? 0 : 1][fromSquare];
 			for(long toBB = moveBitboard; toBB != 0; toBB &= toBB - 1) {
 				int toSquare = Long.numberOfTrailingZeros(toBB);
 				Move move = new Move(fromSquare, toSquare, sidePiece(side));
@@ -145,10 +147,19 @@ public class PawnMoveGen extends MoveGen {
 
 	@Override
 	public boolean isPositionAttacked(Board b, boolean side, long position) {
-		long opponentAttacks = genPawnAttack(!side, b.getPawnBitboard(!side), b.getSidePieces(!side));
-		if((opponentAttacks & position) != 0L) {
-			return true;
+//		long opponentAttacks = genPawnAttack(!side, b.getPawnBitboard(!side), b.getSidePieces(!side));
+//		if((opponentAttacks & position) != 0L) {
+//			return true;
+//		}
+//		return false;
+
+		for(; position != 0; position &= position - 1) {
+			int square = Long.numberOfTrailingZeros(position);
+			if((pawnAttackMoves[side ? 0 : 1][square] & b.getPawnBitboard(!side)) != 0) {
+				return true;
+			}
 		}
+
 		return false;
 	}
 
@@ -174,16 +185,35 @@ public class PawnMoveGen extends MoveGen {
 //		}
 //	}
 
-	private static long genPawnAttack(boolean side, long pawnPositions, long sidePieces) {
-		// side:
-		// white = true
-		// black = false
-		if(side) {
-			return ~sidePieces & (((clearFileH & pawnPositions) << 9) |
-					((clearFileA & pawnPositions) << 7));
-		} else {
-			return ~sidePieces & (((clearFileA & pawnPositions) >>> 9) |
-					((clearFileH & pawnPositions) >>> 7));
+//	private static long genPawnAttack(boolean side, long pawnPositions, long sidePieces) {
+//		// side:
+//		// white = true
+//		// black = false
+//		if(side) {
+//			return ~sidePieces & (((clearFileH & pawnPositions) << 9) |
+//					((clearFileA & pawnPositions) << 7));
+//		} else {
+//			return ~sidePieces & (((clearFileA & pawnPositions) >>> 9) |
+//					((clearFileH & pawnPositions) >>> 7));
+//		}
+//	}
+
+	public static long[][] genPawnAttackMoves() {
+		long[][] genMoves = new long[2][64];
+		long pawnPos = 1L;
+
+		for(int i = 0; i < 64; i++) {
+			long pawnAttackPos = pawnPos & (clearRank1 | clearRank8);
+
+			// white pawn attacks
+			genMoves[0][i] = (((clearFileH & pawnAttackPos) << 9) | ((clearFileA & pawnAttackPos) << 7));
+
+			// black pawn attacks
+			genMoves[1][i] = (((clearFileA & pawnAttackPos) >>> 9) | ((clearFileH & pawnAttackPos) >>> 7));
+
+			pawnPos <<= 1;
 		}
+
+		return genMoves;
 	}
 }

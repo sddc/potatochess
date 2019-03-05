@@ -96,7 +96,7 @@ public abstract class MoveGen {
 
 		for(long fromBB = b.getPieceBitboard(sidePiece(side)); fromBB != 0; fromBB &= fromBB - 1) {
 			int fromSquare = Long.numberOfTrailingZeros(fromBB);
-			long moveBitboard = genMoveBitboard(b, side, fromSquare);
+			long moveBitboard = genMoveBitboard(b, side, fromSquare)& ~b.getSidePieces(side);
 
 			if (captureMovesOnly) {
 				moveBitboard &= b.getSidePieces(!side);

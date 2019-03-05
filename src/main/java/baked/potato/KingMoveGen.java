@@ -22,7 +22,7 @@ public class KingMoveGen extends MoveGen {
 
 	@Override
 	public long genMoveBitboard(Board b, boolean side, int fromSquare) {
-		return kingMoves[fromSquare] & ~b.getSidePieces(side);
+		return kingMoves[fromSquare];
 	}
 
 	@Override

@@ -13,7 +13,7 @@ public class KnightMoveGen extends MoveGen {
 
 	@Override	
 	public long genMoveBitboard(Board b, boolean side, int fromSquare) {
-		return knightMoves[fromSquare] & ~b.getSidePieces(side);
+		return knightMoves[fromSquare];
 	}
 
 	@Override
