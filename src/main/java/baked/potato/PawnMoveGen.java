@@ -1,6 +1,5 @@
 package baked.potato;
 
-import java.util.ArrayList;
 import java.lang.UnsupportedOperationException;
 
 public class PawnMoveGen extends MoveGen {
@@ -14,50 +13,57 @@ public class PawnMoveGen extends MoveGen {
 	}
 
 	@Override
-	public ArrayList<Move> generateMoves(boolean side, boolean captureMovesOnly) {
-		ArrayList<Move> moves = new ArrayList<Move>();
+	public void generateMoves(Board b, Movelist ml, boolean captureMovesOnly, boolean kingInCheck) {
+		boolean side = b.getActiveColor();
 
-		for(Square fromSquare : getOccupancyIndexes(board.getPawnBitboard(side))) {
+		for(long fromBB = b.getPawnBitboard(side); fromBB != 0; fromBB &= fromBB - 1) {
+			int fromSquare = Long.numberOfTrailingZeros(fromBB);
 			long moveBitboard;
 
 			if(!captureMovesOnly) {
-				// double pawn push
-				moveBitboard = genDoublePawnPush(side, getSquareMask(fromSquare), board.getAllPieces());
-				for (Square toSquare : getOccupancyIndexes(moveBitboard)) {
-					Move move = new Move(fromSquare, toSquare, sidePiece(side));
-					move.setFlag(Flag.DOUBLE_PAWN_PUSH);
-
-					if (isValidMove(side, move)) {
-						moves.add(move);
-					}
-				}
-
 				// pawn push
-				moveBitboard = genPawnPush(side, getSquareMask(fromSquare), board.getAllPieces());
-				for (Square toSquare : getOccupancyIndexes(moveBitboard)) {
-					if (isPromotion(toSquare)) {
-						genPromotionMoves(side, false, fromSquare, toSquare, moves);
+				moveBitboard = 1L << (fromSquare + (side ? 8 : -8)) & ~b.getAllPieces();
+				if(moveBitboard != 0) {
+					int toSquare = Long.numberOfTrailingZeros(moveBitboard);
+
+					if ((moveBitboard & maskRank1) != 0 || (moveBitboard & maskRank8) != 0) {
+						genPromotionMoves(b, side, false, fromSquare, toSquare, ml);
 					} else {
 						Move move = new Move(fromSquare, toSquare, sidePiece(side));
-						if (isValidMove(side, move)) {
-							moves.add(move);
+
+						if (isValidMove(b, side, move)) {
+							ml.addMove(move);
+						}
+					}
+
+					// double pawn push
+					moveBitboard = (side ? (maskRank3 & moveBitboard) << 8 : (maskRank6 & moveBitboard) >>> 8) & ~b.getAllPieces();
+					if(moveBitboard != 0) {
+						toSquare = Long.numberOfTrailingZeros(moveBitboard);
+						Move move = new Move(fromSquare, toSquare, sidePiece(side));
+						move.setFlag(Flag.DOUBLE_PAWN_PUSH);
+
+						if (isValidMove(b, side, move)) {
+							ml.addMove(move);
 						}
 					}
 				}
 			}
 
 			// pawn attack
-			long opponentPieces = board.getSidePieces(!side);
-			if(board.lastMoveDPP()) {
+			long opponentPieces = b.getSidePieces(!side);
+			if(b.lastMoveDPP()) {
 				// add en passant square
-				opponentPieces |= getSquareMask(board.getEpTargetSquare());
+				opponentPieces |= getSquareMask(b.getEpTargetSquare());
 			}
 
-			moveBitboard = opponentPieces & genPawnAttack(side, getSquareMask(fromSquare), board.getSidePieces(side));
-			for(Square toSquare : getOccupancyIndexes(moveBitboard)) {
+			// todo: pawn attack lookup table
+			moveBitboard = opponentPieces & genPawnAttack(side, 1L << fromSquare, b.getSidePieces(side));
+			for(long toBB = moveBitboard; toBB != 0; toBB &= toBB - 1) {
+				int toSquare = Long.numberOfTrailingZeros(toBB);
 				Move move = new Move(fromSquare, toSquare, sidePiece(side));
 
-				if(board.lastMoveDPP() && (toSquare == board.getEpTargetSquare())) {
+				if(b.lastMoveDPP() && (toSquare == b.getEpTargetSquare().intValue)) {
 					move.setFlag(Flag.EP_CAPTURE);
 					move.score = 99;
 					if(side == Board.WHITE) {
@@ -65,37 +71,37 @@ public class PawnMoveGen extends MoveGen {
 					} else {
 						move.setCapturePieceType(Piece.WHITE_PAWN);
 					}
-					if(isValidMove(side, move)) {
-						moves.add(move);
+					if(isValidMove(b, side, move)) {
+						ml.addMove(move);
 					}
 				} else {
-					if(isPromotion(toSquare)) {
-						genPromotionMoves(side, true, fromSquare, toSquare, moves);
+					if((moveBitboard & maskRank1) != 0 || (moveBitboard & maskRank8) != 0) {
+						genPromotionMoves(b, side, true, fromSquare, toSquare, ml);
 					} else {
-						Piece type = board.getPieceType(toSquare);
+						// todo: mailbox
+						Piece type = b.getPieceType(Square.toEnum(toSquare));
 						move.setFlag(Flag.CAPTURE);
 						move.score = pieceValues[type.intValue] * 100 - pieceValues[sidePiece(side).intValue];
 						move.setCapturePieceType(type);
-						if(isValidMove(side, move)) {
-							moves.add(move);
+						if(isValidMove(b, side, move)) {
+							ml.addMove(move);
 						}
 					}
 				}
 
 			}
 		}
-		return moves;
 	}
 
-	private boolean isPromotion(Square toSquare) {
-		if(((getSquareMask(toSquare) & maskRank1) != 0) || ((getSquareMask(toSquare) & maskRank8) != 0)) {
-			return true;
-		}
+//	private boolean isPromotion(Square toSquare) {
+//		if(((getSquareMask(toSquare) & maskRank1) != 0) || ((getSquareMask(toSquare) & maskRank8) != 0)) {
+//			return true;
+//		}
+//
+//		return false;
+//	}
 
-		return false;
-	}
-
-	private void genPromotionMoves(boolean side, boolean isAttack, Square fromSquare, Square toSquare, ArrayList<Move> moves) {
+	private void genPromotionMoves(Board b, boolean side, boolean isAttack, int fromSquare, int toSquare, Movelist ml) {
 		Move[] promotion = {
 			new Move(fromSquare, toSquare, sidePiece(side)),
 			new Move(fromSquare, toSquare, sidePiece(side)),
@@ -110,20 +116,21 @@ public class PawnMoveGen extends MoveGen {
 
 		for(Move p : promotion) {
 			if(isAttack) {
-				Piece type = board.getPieceType(toSquare);
+				// todo: mailbox
+				Piece type = b.getPieceType(Square.toEnum(toSquare));
 				p.setCapturePieceType(type);
 				p.setFlag(Flag.CAPTURE);
 				p.score = pieceValues[type.intValue] * 100 - pieceValues[sidePiece(side).intValue];
 			}
 			p.setFlag(Flag.PROMOTION);
-			if(isValidMove(side, p)) {
-				moves.add(p);
+			if(isValidMove(b, side, p)) {
+				ml.addMove(p);
 			}
 		}
 	}
 
 	@Override
-	public long genMoveBitboard(boolean side, Square fromSquare) {
+	public long genMoveBitboard(Board b, boolean side, int fromSquare) {
 		throw new UnsupportedOperationException("not used for pawn movegen");
 	}
 
@@ -137,35 +144,35 @@ public class PawnMoveGen extends MoveGen {
 	}
 
 	@Override
-	public boolean isPositionAttacked(boolean side, long position) {
-		long opponentAttacks = genPawnAttack(!side, board.getPawnBitboard(!side), board.getSidePieces(!side));
+	public boolean isPositionAttacked(Board b, boolean side, long position) {
+		long opponentAttacks = genPawnAttack(!side, b.getPawnBitboard(!side), b.getSidePieces(!side));
 		if((opponentAttacks & position) != 0L) {
 			return true;
 		}
 		return false;
 	}
 
-	private static long genPawnPush(boolean side, long pawnPositions, long allPieces) {
-		// side:
-		// white = true
-		// black = false
-		if(side) {
-			return ~allPieces & (pawnPositions << 8);
-		} else {
-			return ~allPieces & (pawnPositions >>> 8);
-		}
-	}
+//	private static long genPawnPush(boolean side, long pawnPositions, long allPieces) {
+//		// side:
+//		// white = true
+//		// black = false
+//		if(side) {
+//			return ~allPieces & (pawnPositions << 8);
+//		} else {
+//			return ~allPieces & (pawnPositions >>> 8);
+//		}
+//	}
 
-	private static long genDoublePawnPush(boolean side, long pawnPositions, long allPieces) {
-		// side:
-		// white = true
-		// black = false
-		if(side) {
-			return ~allPieces & ((maskRank3 & genPawnPush(side, pawnPositions, allPieces)) << 8);
-		} else {
-			return ~allPieces & ((maskRank6 & genPawnPush(side, pawnPositions, allPieces)) >>> 8);
-		}
-	}
+//	private static long genDoublePawnPush(boolean side, long pawnPositions, long allPieces) {
+//		// side:
+//		// white = true
+//		// black = false
+//		if(side) {
+//			return ~allPieces & ((maskRank3 & genPawnPush(side, pawnPositions, allPieces)) << 8);
+//		} else {
+//			return ~allPieces & ((maskRank6 & genPawnPush(side, pawnPositions, allPieces)) >>> 8);
+//		}
+//	}
 
 	private static long genPawnAttack(boolean side, long pawnPositions, long sidePieces) {
 		// side:

@@ -1,8 +1,5 @@
 package baked.potato;
 
-import java.util.ArrayList;
-import java.util.Collections;
-
 public abstract class MoveGen {
 	public static final long clearFileA = 0xFEFEFEFEFEFEFEFEL;
 	public static final long clearFileB = 0xFDFDFDFDFDFDFDFDL;
@@ -27,7 +24,7 @@ public abstract class MoveGen {
 	// wp, wr, wn, wb, wq, wk, bp, br, bn, bb, bq, bk
 	protected static final int[] pieceValues = {1, 5, 3, 3, 9, 20, 1, 5, 3, 3, 9, 20};
 
-	protected static Board board = null;
+//	protected static Board board = null;
 
 	protected static MoveGen[] moveGens = {
 	       PawnMoveGen.getInstance(),	
@@ -38,87 +35,110 @@ public abstract class MoveGen {
 	       KingMoveGen.getInstance()
 	};
 
-	public static void setBoard(Board board) {
-		MoveGen.board = board;
-	}
+//	public static void setBoard(Board board) {
+//		MoveGen.board = board;
+//	}
 
-	public static ArrayList<Move> getMoves(boolean side) {
-		if(board == null) {
-			// check if board is set
-			return null;
-		}
+//	public static ArrayList<Move> getMoves(boolean side) {
+//		if(board == null) {
+//			// check if board is set
+//			return null;
+//		}
+//
+//		ArrayList<Move> moves = new ArrayList<Move>();
+//
+//		for(MoveGen mg : moveGens) {
+//			moves.addAll(mg.generateMoves(side, false));
+//		}
+//
+//		return moves;
+//	}
 
-		ArrayList<Move> moves = new ArrayList<Move>();
-
-		for(MoveGen mg : moveGens) {
-			moves.addAll(mg.generateMoves(side, false));
-		}
-
-		return moves;
-	}
-
-	public static ArrayList<Move> getCaptureMoves(boolean side) {
-		if(board == null) {
-			// check if board is set
-			return null;
-		}
-
-		ArrayList<Move> moves = new ArrayList<Move>();
+	public static Movelist getMoves(Board b) {
+		Movelist ml = new Movelist();
+		boolean kingInCheck = isKingInCheck(b, b.getActiveColor());
 
 		for(MoveGen mg : moveGens) {
-			moves.addAll(mg.generateMoves(side, true));
+			mg.generateMoves(b, ml, false, kingInCheck);
 		}
 
-		return moves;
+		return ml;
 	}
 
-	public ArrayList<Move> generateMoves(boolean side, boolean captureMovesOnly) {
-		ArrayList<Move> moves = new ArrayList<Move>();
+	public static Movelist getCaptureMoves(Board b) {
+		Movelist ml = new Movelist();
+		boolean kingInCheck = isKingInCheck(b, b.getActiveColor());
 
-		for(Square fromSquare : getOccupancyIndexes(board.getPieceBitboard(sidePiece(side)))) {
-			long moveBitboard = genMoveBitboard(side, fromSquare);
+		for(MoveGen mg : moveGens) {
+			mg.generateMoves(b, ml, true, kingInCheck);
+		}
 
-			if(captureMovesOnly) {
-				moveBitboard &= board.getSidePieces(!side);
+		return ml;
+	}
+
+//	public static ArrayList<Move> getCaptureMoves(boolean side) {
+//		if(board == null) {
+//			// check if board is set
+//			return null;
+//		}
+//
+//		ArrayList<Move> moves = new ArrayList<Move>();
+//
+//		for(MoveGen mg : moveGens) {
+//			moves.addAll(mg.generateMoves(, side, true));
+//		}
+//
+//		return moves;
+//	}
+
+	public void generateMoves(Board b, Movelist ml, boolean captureMovesOnly, boolean kingInCheck) {
+		boolean side = b.getActiveColor();
+
+		for(long fromBB = b.getPieceBitboard(sidePiece(side)); fromBB != 0; fromBB &= fromBB - 1) {
+			int fromSquare = Long.numberOfTrailingZeros(fromBB);
+			long moveBitboard = genMoveBitboard(b, side, fromSquare);
+
+			if (captureMovesOnly) {
+				moveBitboard &= b.getSidePieces(!side);
 			}
 
-			for(Square toSquare : getOccupancyIndexes(moveBitboard)) {
+			for(long toBB = moveBitboard; toBB != 0; toBB &= toBB - 1) {
+				int toSquare = Long.numberOfTrailingZeros(toBB);
 				Move move = new Move(fromSquare, toSquare, sidePiece(side));
-				Piece type = board.getPieceType(toSquare);
+				// todo: mailbox
+				Piece type = b.getPieceType(Square.toEnum(toSquare));
 
-				if(type != Piece.EMPTY) {
+				if (type != Piece.EMPTY) {
 					move.setFlag(Flag.CAPTURE);
 					move.setCapturePieceType(type);
 					move.score = pieceValues[type.intValue] * 100 - pieceValues[sidePiece(side).intValue];
 				}
-				
-				if(isValidMove(side, move)) {
-					moves.add(move);
+
+				if (isValidMove(b, side, move)) {
+					ml.addMove(move);
 				}
 			}
 		}
-
-		return moves;
 	}
 
-	public boolean isValidMove(boolean side, Move move) {
-		board.move(side, move);
+	public boolean isValidMove(Board b, boolean side, Move move) {
+		b.move(side, move);
 
 		for(MoveGen mg : moveGens) {
-			if(mg.isPositionAttacked(side, board.getKingBitboard(side))) {
-				board.undoMove(side);
+			if(mg.isPositionAttacked(b, side, b.getKingBitboard(side))) {
+				b.undoMove(side);
 				return false;
 			}
 		}
 
-		board.undoMove(side);
+		b.undoMove(side);
 
 		return true;
 	}
 
-	public static boolean isKingInCheck(boolean side) {
+	public static boolean isKingInCheck(Board b, boolean side) {
 		for(MoveGen mg : moveGens) {
-			if(mg.isPositionAttacked(side, board.getKingBitboard(side))) {
+			if(mg.isPositionAttacked(b, side, b.getKingBitboard(side))) {
 				return true;
 			}
 		}
@@ -126,9 +146,9 @@ public abstract class MoveGen {
 		return false;
 	}
 
-	abstract public long genMoveBitboard(boolean side, Square fromSquare);
+	abstract public long genMoveBitboard(Board b, boolean side, int fromSquare);
 	abstract public Piece sidePiece(boolean side);
-	abstract public boolean isPositionAttacked(boolean side, long position);
+	abstract public boolean isPositionAttacked(Board b, boolean side, long position);
 
 	public static Square[] getOccupancyIndexes(long occupancy) {
 		Square[] occupancyIndexes = new Square[Long.bitCount(occupancy)];
@@ -147,22 +167,25 @@ public abstract class MoveGen {
 		return 1L << s.intValue;
 	}
 
-	public static void sortMoves(ArrayList<Move> moves, Move pv) {
-		int pvIdx = moves.indexOf(pv);
-		if(pvIdx != -1) {
-			moves.get(pvIdx).score = 10000;
-			Collections.swap(moves, 0, pvIdx);
+	public static void sortMoves(Movelist ml, Move pv) {
+		for(int mIdx = 0; mIdx < ml.size(); mIdx++) {
+			Move m = ml.moves[mIdx];
+
+			if(m.move == pv.move) {
+				m.score = 10000;
+			}
 		}
 
-		for(int i = 0; i < moves.size(); i++) {
-			int max = moves.get(i).score;
+		// selection sort
+		for(int mIdx = 0; mIdx < ml.size(); mIdx++) {
+			int max = ml.moves[mIdx].score;
 
-			for(int j = i + 1; j < moves.size(); j++) {
-				Move m = moves.get(j);
-
-				if(moves.get(j).score > max) {
-					Collections.swap(moves, i, j);
-					max = m.score;
+			for(int mIdx2 = mIdx + 1; mIdx2 < ml.size(); mIdx2++) {
+				if(ml.moves[mIdx2].score > max) {
+					Move temp = ml.moves[mIdx];
+					ml.moves[mIdx] = ml.moves[mIdx2];
+					ml.moves[mIdx2] = temp;
+					max = ml.moves[mIdx2].score;
 				}
 			}
 		}

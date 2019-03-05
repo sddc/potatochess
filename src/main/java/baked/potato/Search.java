@@ -1,6 +1,7 @@
 package baked.potato;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class Search implements Runnable {
     public static final int INFINITY = 1000000;
@@ -55,8 +56,8 @@ public class Search implements Runnable {
         for(int i = 0; i < depth && ttEntry != null; i++) {
             Move m = new Move(ttEntry.bestMove);
 
-            ArrayList<Move> moves = MoveGen.getMoves(b.getActiveColor());
-            if(moves.contains(m)) {
+            Movelist ml = MoveGen.getMoves(b);
+            if(Arrays.asList(ml.moves).contains(m)) {
                 b.move(b.getActiveColor(), m);
                 b.toggleActiveColor();
                 result += result.length() > 0 ? " " + m.toString() : m.toString();
@@ -118,19 +119,21 @@ public class Search implements Runnable {
             return Evaluation.score(b) * color;
         }
 
-        ArrayList<Move> moves = MoveGen.getMoves(side);
-        if(moves.size() == 0) {
-            if(MoveGen.isKingInCheck(side)) {
+        Movelist ml = MoveGen.getMoves(b);
+        if(ml.size() == 0) {
+            if(MoveGen.isKingInCheck(b, side)) {
                 return -MATE + b.getPly();
             } else {
                 return 0;
             }
         }
 
-        MoveGen.sortMoves(moves, pvMove);
+        //MoveGen.sortMoves(ml, pvMove);
         Move bestMove = null;
         //System.out.println("depth " + depth + " leftmost move is: " + moves.get(0));
-        for(Move m : moves) {
+        for(int mIdx = 0; mIdx < ml.size(); mIdx++) {
+            Move m = ml.moves[mIdx];
+
             b.move(side, m);
             int eval = -negamax(b, depth - 1, -beta, -alpha, b.toggleActiveColor());
             b.undoMove(b.toggleActiveColor());

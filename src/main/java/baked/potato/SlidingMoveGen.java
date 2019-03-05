@@ -29,16 +29,16 @@ public abstract class SlidingMoveGen extends MoveGen {
 		genMagicMoves(false, bishopOccupancyMasks, bishopMagics, bishopShifts, bishopMoves);
 	}
 
-	public long getRookMoves(boolean side, int squareIndex) {
-		long occupancy = board.getAllPieces() & rookOccupancyMasks[squareIndex];
+	public long getRookMoves(Board b, boolean side, int squareIndex) {
+		long occupancy = b.getAllPieces() & rookOccupancyMasks[squareIndex];
 		int index = (int)((rookMagics[squareIndex] * occupancy) >>> rookShifts[squareIndex]);
-		return rookMoves[squareIndex][index] & ~board.getSidePieces(side);
+		return rookMoves[squareIndex][index] & ~b.getSidePieces(side);
 	}
 
-	public long getBishopMoves(boolean side, int squareIndex) {
-		long occupancy = board.getAllPieces() & bishopOccupancyMasks[squareIndex];
+	public long getBishopMoves(Board b, boolean side, int squareIndex) {
+		long occupancy = b.getAllPieces() & bishopOccupancyMasks[squareIndex];
 		int index = (int)((bishopMagics[squareIndex] * occupancy) >>> bishopShifts[squareIndex]);
-		return bishopMoves[squareIndex][index] & ~board.getSidePieces(side);
+		return bishopMoves[squareIndex][index] & ~b.getSidePieces(side);
 	}
 
 	public static void genMagicMoves(boolean type, long[] occupancyMasks, long[] magics, int[] shifts, long[][] moves) {

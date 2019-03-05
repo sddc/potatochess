@@ -39,6 +39,16 @@ public class Move implements Comparable<Move> {
 		move |= (type.intValue << 12);
 	}
 
+	public Move(int from, int to, Piece type) {
+		// to square
+		move |= to;
+		move = move << 6;
+		// from square
+		move |= from;
+		// piece type
+		move |= (type.intValue << 12);
+	}
+
 	public Move(int move) {
 		this.move = move;
 	}

@@ -289,6 +289,7 @@ public class Board {
 		}
 	}
 
+	// todo: side
 	public void move(boolean side, Move m) {
 		ply++;
 		// assumes m is at least pseudo legal
@@ -445,6 +446,7 @@ public class Board {
 		}
 	}
 
+	// todo: side
 	public void undoMove(boolean side) {
 		ply--;
 		if(previousMoves.isEmpty()) {

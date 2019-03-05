@@ -12,8 +12,8 @@ public class KnightMoveGen extends MoveGen {
 	}
 
 	@Override	
-	public long genMoveBitboard(boolean side, Square fromSquare) {
-		return knightMoves[fromSquare.intValue] & ~board.getSidePieces(side);
+	public long genMoveBitboard(Board b, boolean side, int fromSquare) {
+		return knightMoves[fromSquare] & ~b.getSidePieces(side);
 	}
 
 	@Override
@@ -26,9 +26,9 @@ public class KnightMoveGen extends MoveGen {
 	}
 
 	@Override
-	public boolean isPositionAttacked(boolean side, long position) {
-		for(Square s : getOccupancyIndexes(board.getKnightBitboard(!side))) {
-			long knightAttack = knightMoves[s.intValue] & ~board.getSidePieces(!side);
+	public boolean isPositionAttacked(Board b, boolean side, long position) {
+		for(Square s : getOccupancyIndexes(b.getKnightBitboard(!side))) {
+			long knightAttack = knightMoves[s.intValue] & ~b.getSidePieces(!side);
 
 			if((knightAttack & position) != 0L) {
 				return true;

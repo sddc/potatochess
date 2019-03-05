@@ -9,17 +9,13 @@ import java.util.Arrays;
 
 public class Game {
 	private Board chessboard;
-	private ArrayList<Move> moves;
 	private static final String initialPosition = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-	private boolean activeColor;
 	private Search search;
 	private Thread searchThread;
 
 	public Game() {
 		chessboard = parseFen(initialPosition);
-		activeColor = chessboard.getActiveColor();
-		MoveGen.setBoard(chessboard);
-		moves = MoveGen.getMoves(activeColor);
+		MoveGen.getMoves(chessboard);
 		start();
 	}
 
@@ -48,7 +44,6 @@ public class Game {
 					int moveskip = 2;
 					if(command[1].equals("startpos")) {
 						chessboard = parseFen(initialPosition);
-						MoveGen.setBoard(chessboard);
 					} else if(command[1].equals("fen")) {
 						String fen = "";
 						for(int i = 2; i < 8; i++) {
@@ -56,12 +51,14 @@ public class Game {
 							if(i < 7) fen += " ";
 						}
 						chessboard = parseFen(fen);
-						MoveGen.setBoard(chessboard);
 						moveskip = 8;
 					}
 
 					for(int i = moveskip; i < command.length; i++) {
-						for(Move m : MoveGen.getMoves(chessboard.getActiveColor())) {
+						Movelist ml = MoveGen.getMoves(chessboard);
+						for(int mIdx = 0; mIdx < ml.size(); mIdx++) {
+							Move m = ml.moves[mIdx];
+
 							if(m.toString().equals(command[i])) {
 								chessboard.move(chessboard.getActiveColor(), m);
 								chessboard.toggleActiveColor();
@@ -144,12 +141,13 @@ public class Game {
 
 					break;
 				case "moves":
-					moves = MoveGen.getMoves(chessboard.getActiveColor());
-					Collections.sort(moves);
-					for(Move m : moves) {
+					Movelist ml = MoveGen.getMoves(chessboard);
+					Arrays.sort(ml.moves);
+					for(int mIdx = 0; mIdx < ml.size(); mIdx++) {
+						Move m = ml.moves[mIdx];
 						System.out.println(m.toString());
 					}
-					System.out.println(moves.size() + " moves");
+					System.out.println(ml.size() + " moves");
 //					ArrayList<Move> mvlist = MoveGen.getCaptureMoves(chessboard.getActiveColor());
 //					Move testPvMove = new Move(Square.F3, Square.H3, Piece.WHITE_QUEEN);
 //					testPvMove.setFlag(Flag.CAPTURE);
@@ -199,17 +197,13 @@ public class Game {
 						if(command[1].length() == 4 || command[1].length() == 5) {
 							boolean foundMove = false;
 
-							for(Move m : moves) {
+							ml = MoveGen.getMoves(chessboard);
+							for(int mIdx = 0; mIdx < ml.size(); mIdx++) {
+								Move m = ml.moves[mIdx];
+
 								if(m.toString().equals(command[1])) {
-									chessboard.move(activeColor, m);
-									activeColor = chessboard.toggleActiveColor();
-									moves = MoveGen.getMoves(activeColor);
-
-									// check if game is over for opponent
-                                    if(gameOver()) {
-                                        return;
-                                    }
-
+									chessboard.move(chessboard.getActiveColor(), m);
+									chessboard.toggleActiveColor();
 									foundMove = true;
 									break;
 								}
@@ -232,15 +226,16 @@ public class Game {
 						String position = preSplitCommand.substring(preSplitCommand.indexOf(' ') + 1,
 								preSplitCommand.length());
 						chessboard = parseFen(position);
-						activeColor = chessboard.getActiveColor();
-						MoveGen.setBoard(chessboard);
-						moves = MoveGen.getMoves(activeColor);
 					} catch(IllegalArgumentException e) {
 						System.out.println("setboard failed: " + e.getMessage());
 					}
 					break;
 				case "perft":
-					System.out.println("nodes: " + perft(chessboard, chessboard.getActiveColor(), Integer.parseInt(command[1])));
+					depth = Integer.parseInt(command[1]);
+					long elapsed = System.nanoTime();
+					int nodes = perft(chessboard, chessboard.getActiveColor(), depth);
+					elapsed = System.nanoTime() - elapsed;
+					System.out.printf("nodes: %d\n%.1f ms\n", nodes, elapsed * 1e-6);
 					break;
 				case "divide":
 					divide(chessboard, chessboard.getActiveColor(), Integer.parseInt(command[1]), true);
@@ -266,24 +261,6 @@ public class Game {
 		}
 	}
 
-    private boolean gameOver() {
-        if(moves.size() == 0) {
-            if(MoveGen.isKingInCheck(activeColor)) {
-                if(activeColor) {
-                    System.out.println("Checkmate. Black has won.");
-                } else {
-                    System.out.println("Checkmate. White has won.");
-                }
-            } else {
-                System.out.println("baked.potato.Game is a draw.");
-            }
-
-            return true;
-        }
-        
-        return false;
-    }
-
 	public static int perft(Board chessboard, boolean side, int depth) {
 		if(depth == 0) {
 			return 1;
@@ -291,8 +268,9 @@ public class Game {
 
 		int nodes = 0;
 
-		ArrayList<Move> moves = MoveGen.getMoves(side);
-		for(Move m : moves) {
+		Movelist ml = MoveGen.getMoves(chessboard);
+		for(int mIdx = 0; mIdx < ml.size(); mIdx++) {
+			Move m = ml.moves[mIdx];
 			chessboard.move(side, m);
 			nodes += perft(chessboard, chessboard.toggleActiveColor(), depth-1);
 			chessboard.undoMove(chessboard.toggleActiveColor());
@@ -311,8 +289,9 @@ public class Game {
 			results = new ArrayList<String>();
 		}
 
-		ArrayList<Move> moves = MoveGen.getMoves(side);
-		for(Move m : moves) {
+		Movelist ml = MoveGen.getMoves(chessboard);
+		for(int mIdx = 0; mIdx < ml.size(); mIdx++) {
+			Move m = ml.moves[mIdx];
 			chessboard.move(side, m);
 			Nodes += perft(chessboard, chessboard.toggleActiveColor(), depth-1);
 			chessboard.undoMove(chessboard.toggleActiveColor());
