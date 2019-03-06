@@ -19,6 +19,22 @@ public class Game {
 		start();
 	}
 
+	public static void printBB(long bb) {
+		for(int i = 56; i >= 0; i -= 8) {
+			long mask = 1L << i;
+			for(int j = i; j < i + 8; j++) {
+				if((bb & mask) != 0) {
+					System.out.print("x ");
+				} else {
+					System.out.print("_ ");
+				}
+
+				mask <<= 1;
+			}
+			System.out.print("\n");
+		}
+	}
+
 	public void start() {
 		Scanner input = new Scanner(System.in);
 		String[] command;
@@ -29,6 +45,10 @@ public class Game {
 			command = preSplitCommand.split(" ");
 
 			switch(command[0]) {
+				case "test":
+					long attacked = MoveGen.attackedSquares(chessboard, !chessboard.getActiveColor());
+					printBB(attacked);
+					break;
 				case "uci":
 					System.out.println("id name Potatochess");
 					System.out.println("id author Sean D");

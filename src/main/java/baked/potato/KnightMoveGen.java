@@ -26,16 +26,22 @@ public class KnightMoveGen extends MoveGen {
 	}
 
 	@Override
-	public boolean isPositionAttacked(Board b, boolean side, long position) {
-		for(Square s : getOccupancyIndexes(b.getKnightBitboard(!side))) {
-			long knightAttack = knightMoves[s.intValue] & ~b.getSidePieces(!side);
+	public boolean squareAttacked(Board b, boolean side, int square) {
+//		for(Square s : getOccupancyIndexes(b.getKnightBitboard(!side))) {
+//			long knightAttack = knightMoves[s.intValue] & ~b.getSidePieces(!side);
+//
+//			if((knightAttack & square) != 0L) {
+//				return true;
+//			}
+//		}
+//
+//		return false;
+		return (knightMoves[square] & b.getKnightBitboard(!side)) != 0;
+	}
 
-			if((knightAttack & position) != 0L) {
-				return true;
-			}
-		}
-
-		return false;
+	@Override
+	public long attackers(Board b, boolean side, int square) {
+		return knightMoves[square] & b.getKnightBitboard(!side);
 	}
 
 	/*

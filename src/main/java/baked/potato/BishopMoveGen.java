@@ -25,14 +25,19 @@ public class BishopMoveGen extends SlidingMoveGen {
 	}
 
 	@Override
-	public boolean isPositionAttacked(Board b, boolean side, long position) {
-		for(Square s : getOccupancyIndexes(position)) {
-			if((b.getBishopBitboard(!side) & getBishopMoves(b, s.intValue)) != 0L) {
-				return true;
-			}
-		}
-
-		return false;
+	public boolean squareAttacked(Board b, boolean side, int square) {
+//		for(Square s : getOccupancyIndexes(square)) {
+//			if((b.getBishopBitboard(!side) & getBishopMoves(b, s.intValue)) != 0L) {
+//				return true;
+//			}
+//		}
+//
+//		return false;
+		return (getBishopMoves(b, square) & b.getBishopBitboard(!side)) != 0;
 	}
-	 
+
+	@Override
+	public long attackers(Board b, boolean side, int square) {
+		return getBishopMoves(b, square) & b.getBishopBitboard(!side);
+	}
 }

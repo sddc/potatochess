@@ -36,6 +36,7 @@ public class Board {
     private long positionKey = 0;
 
     private int ply = 0;
+    private long kingStorage = 0;
 	
 	private Deque<PreviousMove> previousMoves = new ArrayDeque<PreviousMove>();
 
@@ -93,6 +94,34 @@ public class Board {
 		}
 
 		return castleIdx;
+	}
+
+	public void hideKing(boolean side) {
+		if(kingStorage != 0) {
+			throw new UnsupportedOperationException("previous king hidden");
+		}
+
+		if(side) {
+			kingStorage = bitboards[Piece.WHITE_KING.intValue];
+			whitePieces ^= kingStorage;
+		} else {
+			kingStorage = bitboards[Piece.BLACK_KING.intValue];
+			blackPieces ^= kingStorage;
+		}
+	}
+
+	public void showKing(boolean side) {
+		if(kingStorage == 0) {
+			throw new UnsupportedOperationException("no king to show");
+		}
+
+		if(side) {
+			whitePieces ^= kingStorage;
+		} else {
+			blackPieces ^= kingStorage;
+		}
+
+		kingStorage = 0;
 	}
 
     public long getPositionKey() {
@@ -203,7 +232,7 @@ public class Board {
 	}
 
 	public long getAllPieces() {
-		return getSidePieces(Board.WHITE) | getSidePieces(Board.BLACK);
+		return whitePieces | blackPieces;
 	}
 
 	public long getEmptySquares() {

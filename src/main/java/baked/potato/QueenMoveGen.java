@@ -25,16 +25,21 @@ public class QueenMoveGen extends SlidingMoveGen {
 	}
 
 	@Override
-	public boolean isPositionAttacked(Board b, boolean side, long position) {
-		for(Square s : getOccupancyIndexes(position)) {
-			long queenAttack = getBishopMoves(b, s.intValue) | getRookMoves(b, s.intValue);
-
-			if((b.getQueenBitboard(!side) & queenAttack) != 0L) {
-				return true;
-			}
-		}
-
-		return false;
+	public boolean squareAttacked(Board b, boolean side, int square) {
+//		for(Square s : getOccupancyIndexes(square)) {
+//			long queenAttack = getBishopMoves(b, s.intValue) | getRookMoves(b, s.intValue);
+//
+//			if((b.getQueenBitboard(!side) & queenAttack) != 0L) {
+//				return true;
+//			}
+//		}
+//
+//		return false;
+		return ((getRookMoves(b, square) | getBishopMoves(b, square)) & b.getQueenBitboard(!side)) != 0;
 	}
-	 
+
+	@Override
+	public long attackers(Board b, boolean side, int square) {
+		return (getRookMoves(b, square) | getBishopMoves(b, square)) & b.getQueenBitboard(!side);
+	}
 }

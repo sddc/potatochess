@@ -25,14 +25,19 @@ public class RookMoveGen extends SlidingMoveGen {
 	}
 
 	@Override
-	public boolean isPositionAttacked(Board b, boolean side, long position) {
-		for(Square s : getOccupancyIndexes(position)) {
-			if((b.getRookBitboard(!side) & getRookMoves(b, s.intValue)) != 0L) {
-				return true;
-			}
-		}
-
-		return false;
+	public boolean squareAttacked(Board b, boolean side, int square) {
+//		for(Square s : getOccupancyIndexes(square)) {
+//			if((b.getRookBitboard(!side) & getRookMoves(b, s.intValue)) != 0L) {
+//				return true;
+//			}
+//		}
+//
+//		return false;
+		return (getRookMoves(b, square) & b.getRookBitboard(!side)) != 0;
 	}
-	 
+
+	@Override
+	public long attackers(Board b, boolean side, int square) {
+		return getRookMoves(b, square) & b.getRookBitboard(!side);
+	}
 }
