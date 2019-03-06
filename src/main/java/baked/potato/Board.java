@@ -1,5 +1,6 @@
 package baked.potato;
 
+import java.util.Arrays;
 import java.util.Deque;
 import java.util.ArrayDeque;
 
@@ -29,6 +30,7 @@ public class Board {
 	 * A1 = LSB
 	 */
 	private long[] bitboards;
+	private int[] pieceBoard;
 	private long whitePieces;
 	private long blackPieces;
     private int[] pieceCounts;
@@ -57,6 +59,7 @@ public class Board {
             pieceCounts[i] = Long.bitCount(bitboards[i]);
         }
 
+		initPieceBoard();
 		positionKeyInit();
         ply = 0;
 	}
@@ -289,14 +292,25 @@ public class Board {
 		System.out.println("     A   B   C   D   E   F   G   H");
 	}
 
-	public Piece getPieceType(Square s) {
-		long mask = get1BitMask(s);
-		for(int i = 0; i < 12; i++ ) {
-			if((mask & bitboards[i]) != 0) {
-				return Piece.toEnum(i);
+	private void initPieceBoard() {
+		pieceBoard = new int[64];
+		Arrays.fill(pieceBoard, 12);
+		long mask = 1L;
+
+		for(int i = 0; i < 64; i++) {
+			for(int j = 0; j < 12; j++) {
+				if((bitboards[j] & mask) != 0) {
+					pieceBoard[i] = j;
+					break;
+				}
 			}
+
+			mask <<= 1;
 		}
-		return Piece.EMPTY;
+	}
+
+	public Piece getPieceType(Square s) {
+		return Piece.toEnum(pieceBoard[s.intValue]);
 	}
 
 	public long get1BitMask(Square s) {
@@ -334,6 +348,8 @@ public class Board {
 
 		// move within bitboard
 		modify(pieceType, fromMask | toMask);
+		pieceBoard[fromSquare.intValue] = 12; // empty
+		pieceBoard[toSquare.intValue] = pieceType.intValue;
 
 		// update position key
 		positionKey ^= Zobrist.randSquare[pieceType.intValue][fromSquare.intValue];
@@ -384,10 +400,12 @@ public class Board {
 		if(m.getFlag(Flag.EP_CAPTURE)) {
 			if(side == Board.WHITE) {
 				modify(Piece.BLACK_PAWN, get1BitMask(Square.toEnum(toSquare.intValue-8)));
+				pieceBoard[toSquare.intValue-8] = 12;
 				positionKey ^= Zobrist.randSquare[Piece.BLACK_PAWN.intValue][toSquare.intValue-8];
                 pieceCounts[Piece.BLACK_PAWN.intValue]--;
 			} else {
 				modify(Piece.WHITE_PAWN, get1BitMask(Square.toEnum(toSquare.intValue+8)));
+				pieceBoard[toSquare.intValue+8] = 12;
 				positionKey ^= Zobrist.randSquare[Piece.WHITE_PAWN.intValue][toSquare.intValue+8];
                 pieceCounts[Piece.WHITE_PAWN.intValue]--;
 			}
@@ -398,12 +416,16 @@ public class Board {
 				// kingside castle
 				if(side == Board.WHITE) {
 					modify(Piece.WHITE_ROOK, get1BitMask(Square.H1) | get1BitMask(Square.F1));
+					pieceBoard[Square.H1.intValue] = 12;
+					pieceBoard[Square.F1.intValue] = Piece.WHITE_ROOK.intValue;
 					positionKey ^= Zobrist.randSquare[Piece.WHITE_ROOK.intValue][Square.H1.intValue];
 					positionKey ^= Zobrist.randSquare[Piece.WHITE_ROOK.intValue][Square.F1.intValue];
 					castleStatus[0] = false;
 					castleStatus[1] = false;
 				} else {
 					modify(Piece.BLACK_ROOK, get1BitMask(Square.H8) | get1BitMask(Square.F8));
+					pieceBoard[Square.H8.intValue] = 12;
+					pieceBoard[Square.F8.intValue] = Piece.BLACK_ROOK.intValue;
 					positionKey ^= Zobrist.randSquare[Piece.BLACK_ROOK.intValue][Square.H8.intValue];
 					positionKey ^= Zobrist.randSquare[Piece.BLACK_ROOK.intValue][Square.F8.intValue];
 					castleStatus[2] = false;
@@ -413,12 +435,16 @@ public class Board {
 				// queenside castle
 				if(side == Board.WHITE) {
 					modify(Piece.WHITE_ROOK, get1BitMask(Square.A1) | get1BitMask(Square.D1));
+					pieceBoard[Square.A1.intValue] = 12;
+					pieceBoard[Square.D1.intValue] = Piece.WHITE_ROOK.intValue;
 					positionKey ^= Zobrist.randSquare[Piece.WHITE_ROOK.intValue][Square.A1.intValue];
 					positionKey ^= Zobrist.randSquare[Piece.WHITE_ROOK.intValue][Square.D1.intValue];
 					castleStatus[0] = false;
 					castleStatus[1] = false;
 				} else {
 					modify(Piece.BLACK_ROOK, get1BitMask(Square.A8) | get1BitMask(Square.D8));
+					pieceBoard[Square.A8.intValue] = 12;
+					pieceBoard[Square.D8.intValue] = Piece.BLACK_ROOK.intValue;
 					positionKey ^= Zobrist.randSquare[Piece.BLACK_ROOK.intValue][Square.A8.intValue];
 					positionKey ^= Zobrist.randSquare[Piece.BLACK_ROOK.intValue][Square.D8.intValue];
 					castleStatus[2] = false;
@@ -436,6 +462,7 @@ public class Board {
 			// add bit to chosen piece
             Piece promotionType = m.getPromotionType();
 			modify(promotionType, toMask);
+			pieceBoard[toSquare.intValue] = promotionType.intValue;
 			positionKey ^= Zobrist.randSquare[promotionType.intValue][toSquare.intValue];
             pieceCounts[promotionType.intValue]++;
 		}
@@ -513,6 +540,8 @@ public class Board {
 
 		// restore move within bitboard
 		modify(pieceType, fromMask | toMask);
+		pieceBoard[fromSquare.intValue] = pieceType.intValue;
+		pieceBoard[toSquare.intValue] = 12; // empty
 
 		positionKey ^= Zobrist.randSquare[pieceType.intValue][fromSquare.intValue];
 		positionKey ^= Zobrist.randSquare[pieceType.intValue][toSquare.intValue];
@@ -521,6 +550,7 @@ public class Board {
 		if(m.getFlag(Flag.CAPTURE)) {
 			Piece capturePieceType = m.getCapturePieceType();
 			modify(capturePieceType, toMask);
+			pieceBoard[toSquare.intValue] = capturePieceType.intValue;
 			positionKey ^= Zobrist.randSquare[capturePieceType.intValue][toSquare.intValue];
             pieceCounts[capturePieceType.intValue]++;
 		}
@@ -529,10 +559,12 @@ public class Board {
 		if(m.getFlag(Flag.EP_CAPTURE)) {
 			if(side == Board.WHITE) {
 				modify(Piece.BLACK_PAWN, get1BitMask(Square.toEnum(toSquare.intValue-8)));
+				pieceBoard[toSquare.intValue-8] = Piece.BLACK_PAWN.intValue;
 				positionKey ^= Zobrist.randSquare[Piece.BLACK_PAWN.intValue][toSquare.intValue-8];
                 pieceCounts[Piece.BLACK_PAWN.intValue]++;
 			} else {
 				modify(Piece.WHITE_PAWN, get1BitMask(Square.toEnum(toSquare.intValue+8)));
+				pieceBoard[toSquare.intValue+8] = Piece.WHITE_PAWN.intValue;
 				positionKey ^= Zobrist.randSquare[Piece.WHITE_PAWN.intValue][toSquare.intValue+8];
                 pieceCounts[Piece.WHITE_PAWN.intValue]++;
 			}
@@ -544,10 +576,14 @@ public class Board {
 				// kingside castle
 				if(side == Board.WHITE) {
 					modify(Piece.WHITE_ROOK, get1BitMask(Square.H1) | get1BitMask(Square.F1));
+					pieceBoard[Square.H1.intValue] = Piece.WHITE_ROOK.intValue;;
+					pieceBoard[Square.F1.intValue] = 12;
 					positionKey ^= Zobrist.randSquare[Piece.WHITE_ROOK.intValue][Square.H1.intValue];
 					positionKey ^= Zobrist.randSquare[Piece.WHITE_ROOK.intValue][Square.F1.intValue];
 				} else {
 					modify(Piece.BLACK_ROOK, get1BitMask(Square.H8) | get1BitMask(Square.F8));
+					pieceBoard[Square.H8.intValue] = Piece.BLACK_ROOK.intValue;
+					pieceBoard[Square.F8.intValue] = 12;
 					positionKey ^= Zobrist.randSquare[Piece.BLACK_ROOK.intValue][Square.H8.intValue];
 					positionKey ^= Zobrist.randSquare[Piece.BLACK_ROOK.intValue][Square.F8.intValue];
 				}
@@ -555,10 +591,14 @@ public class Board {
 				// queenside castle
 				if(side == Board.WHITE) {
 					modify(Piece.WHITE_ROOK, get1BitMask(Square.A1) | get1BitMask(Square.D1));
+					pieceBoard[Square.A1.intValue] = Piece.WHITE_ROOK.intValue;
+					pieceBoard[Square.D1.intValue] = 12;
 					positionKey ^= Zobrist.randSquare[Piece.WHITE_ROOK.intValue][Square.A1.intValue];
 					positionKey ^= Zobrist.randSquare[Piece.WHITE_ROOK.intValue][Square.D1.intValue];
 				} else {
 					modify(Piece.BLACK_ROOK, get1BitMask(Square.A8) | get1BitMask(Square.D8));
+					pieceBoard[Square.A8.intValue] = Piece.BLACK_ROOK.intValue;
+					pieceBoard[Square.D8.intValue] = 12;
 					positionKey ^= Zobrist.randSquare[Piece.BLACK_ROOK.intValue][Square.A8.intValue];
 					positionKey ^= Zobrist.randSquare[Piece.BLACK_ROOK.intValue][Square.D8.intValue];
 				}
