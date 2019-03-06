@@ -9,14 +9,13 @@ public class Board {
 	public static final boolean BLACK = false;
 	public static final boolean KINGSIDE = true;
 	public static final boolean QUEENSIDE = false;
+	public static final long WKS_CASTLE_MASK = 0x90L;
+	public static final long WQS_CASTLE_MASK = 0x11L;
+	public static final long BKS_CASTLE_MASK = 0x9000000000000000L;
+	public static final long BQS_CASTLE_MASK = 0x1100000000000000L;
 
-	/* castleStatus array 
-	 * 0 = white kingside not rook moved?
-	 * 1 = white queenside not rook moved?
-	 * 2 = black kingside not rook moved?
-	 * 3 = black queenside not rook moved?
-	 */
-	private boolean[] castleStatus;
+
+	private long castleRights; // square has lost castle rights if the corresponding bit is set
 
 	private boolean activeColor;
 	
@@ -44,9 +43,9 @@ public class Board {
 
 	public static final TT tt = new TT(64);
 
-	public Board(long[] bitboards, boolean[] castleStatus, boolean lastMoveDoublePawnPush, Square epTargetSquare, boolean activeColor) {
+	public Board(long[] bitboards, long castleRights, boolean lastMoveDoublePawnPush, Square epTargetSquare, boolean activeColor) {
 		this.bitboards = bitboards;
-		this.castleStatus = castleStatus;
+		this.castleRights = castleRights;
 		this.lastMoveDoublePawnPush = lastMoveDoublePawnPush;
 		this.epTargetSquare = epTargetSquare;
 		this.activeColor = activeColor;
@@ -84,17 +83,16 @@ public class Board {
 			positionKey ^= Zobrist.randEp[epTargetSquare.intValue];
 		}
 
-		positionKey ^= Zobrist.randCastle[getCastlePosKey(castleStatus)];
+		positionKey ^= Zobrist.randCastle[getCastlePosKey(castleRights)];
 	}
 
-	private int getCastlePosKey(boolean[] castleStatus) {
+	private int getCastlePosKey(long castleRights) {
 		int castleIdx = 0;
 
-		for(int i = 0, bit = 8; i < 4; i++, bit >>>= 1) {
-			if(castleStatus[i]) {
-				castleIdx += bit;
-			}
-		}
+		if((WKS_CASTLE_MASK & castleRights) == 0) castleIdx += 8;
+		if((WQS_CASTLE_MASK & castleRights) == 0) castleIdx += 4;
+		if((BKS_CASTLE_MASK & castleRights) == 0) castleIdx += 2;
+		if((BQS_CASTLE_MASK & castleRights) == 0) castleIdx += 1;
 
 		return castleIdx;
 	}
@@ -335,16 +333,18 @@ public class Board {
 	// todo: side
 	public void move(boolean side, Move m) {
 		ply++;
-		// assumes m is at least pseudo legal
 
 		// save move to undo
-		previousMoves.addFirst(new PreviousMove(m, castleStatus, lastMoveDoublePawnPush, epTargetSquare));
+		previousMoves.addFirst(new PreviousMove(m, castleRights, lastMoveDoublePawnPush, epTargetSquare));
 
 		Square fromSquare = m.getFromSquare();
 		Square toSquare = m.getToSquare();
 		long fromMask = get1BitMask(fromSquare);
 		long toMask = get1BitMask(toSquare);
 		Piece pieceType = m.getPieceType();
+
+		// update castle rights
+		castleRights |= fromMask;
 
 		// move within bitboard
 		modify(pieceType, fromMask | toMask);
@@ -362,22 +362,8 @@ public class Board {
 			positionKey ^= Zobrist.randSquare[capturePieceType.intValue][toSquare.intValue];
             pieceCounts[capturePieceType.intValue]--;
 
-			// castling checks
-			if(capturePieceType == Piece.WHITE_ROOK && toSquare == Square.H1) {
-				castleStatus[0] = false;
-			}	
-
-			if(capturePieceType == Piece.WHITE_ROOK && toSquare == Square.A1) {
-				castleStatus[1] = false;
-			}	
-
-			if(capturePieceType == Piece.BLACK_ROOK && toSquare == Square.H8) {
-				castleStatus[2] = false;
-			}	
-
-			if(capturePieceType == Piece.BLACK_ROOK && toSquare == Square.A8) {
-				castleStatus[3] = false;
-			}
+			// update castle rights
+			castleRights |= toMask;
 		}
 
 		if(previousMoves.peekFirst().lastMoveDoublePawnPush) {
@@ -420,16 +406,12 @@ public class Board {
 					pieceBoard[Square.F1.intValue] = Piece.WHITE_ROOK.intValue;
 					positionKey ^= Zobrist.randSquare[Piece.WHITE_ROOK.intValue][Square.H1.intValue];
 					positionKey ^= Zobrist.randSquare[Piece.WHITE_ROOK.intValue][Square.F1.intValue];
-					castleStatus[0] = false;
-					castleStatus[1] = false;
 				} else {
 					modify(Piece.BLACK_ROOK, get1BitMask(Square.H8) | get1BitMask(Square.F8));
 					pieceBoard[Square.H8.intValue] = 12;
 					pieceBoard[Square.F8.intValue] = Piece.BLACK_ROOK.intValue;
 					positionKey ^= Zobrist.randSquare[Piece.BLACK_ROOK.intValue][Square.H8.intValue];
 					positionKey ^= Zobrist.randSquare[Piece.BLACK_ROOK.intValue][Square.F8.intValue];
-					castleStatus[2] = false;
-					castleStatus[3] = false;
 				}
 			} else {
 				// queenside castle
@@ -439,16 +421,12 @@ public class Board {
 					pieceBoard[Square.D1.intValue] = Piece.WHITE_ROOK.intValue;
 					positionKey ^= Zobrist.randSquare[Piece.WHITE_ROOK.intValue][Square.A1.intValue];
 					positionKey ^= Zobrist.randSquare[Piece.WHITE_ROOK.intValue][Square.D1.intValue];
-					castleStatus[0] = false;
-					castleStatus[1] = false;
 				} else {
 					modify(Piece.BLACK_ROOK, get1BitMask(Square.A8) | get1BitMask(Square.D8));
 					pieceBoard[Square.A8.intValue] = 12;
 					pieceBoard[Square.D8.intValue] = Piece.BLACK_ROOK.intValue;
 					positionKey ^= Zobrist.randSquare[Piece.BLACK_ROOK.intValue][Square.A8.intValue];
 					positionKey ^= Zobrist.randSquare[Piece.BLACK_ROOK.intValue][Square.D8.intValue];
-					castleStatus[2] = false;
-					castleStatus[3] = false;
 				}
 			}
 		}
@@ -467,35 +445,8 @@ public class Board {
             pieceCounts[promotionType.intValue]++;
 		}
 
-		// castling checks
-		if(pieceType == Piece.WHITE_KING && fromSquare == Square.E1) {
-			castleStatus[0] = false;
-			castleStatus[1] = false;
-		}
-
-		if(pieceType == Piece.BLACK_KING && fromSquare == Square.E8) {
-			castleStatus[2] = false;
-			castleStatus[3] = false;
-		}
-
-		if(pieceType == Piece.WHITE_ROOK && fromSquare == Square.H1) {
-			castleStatus[0] = false;
-		}	
-
-		if(pieceType == Piece.WHITE_ROOK && fromSquare == Square.A1) {
-			castleStatus[1] = false;
-		}	
-
-		if(pieceType == Piece.BLACK_ROOK && fromSquare == Square.H8) {
-			castleStatus[2] = false;
-		}	
-
-		if(pieceType == Piece.BLACK_ROOK && fromSquare == Square.A8) {
-			castleStatus[3] = false;
-		}
-
-		int castleIdx = getCastlePosKey(castleStatus);
-		int prevCastleIdx = getCastlePosKey(previousMoves.peekFirst().castleStatus);
+		int castleIdx = getCastlePosKey(castleRights);
+		int prevCastleIdx = getCastlePosKey(previousMoves.peekFirst().castleRights);
 		if(castleIdx != prevCastleIdx) {
 			positionKey ^= Zobrist.randCastle[prevCastleIdx];
 			positionKey ^= Zobrist.randCastle[castleIdx];
@@ -513,9 +464,9 @@ public class Board {
 		PreviousMove pm = previousMoves.removeFirst();
 		Move m = pm.move;
 
-		int prevCastleIdx = getCastlePosKey(castleStatus);
-		castleStatus = pm.castleStatus;
-		int castleIdx = getCastlePosKey(castleStatus);
+		int prevCastleIdx = getCastlePosKey(castleRights);
+		castleRights = pm.castleRights;
+		int castleIdx = getCastlePosKey(castleRights);
 		if(castleIdx != prevCastleIdx) {
 			positionKey ^= Zobrist.randCastle[prevCastleIdx];
 			positionKey ^= Zobrist.randCastle[castleIdx];
@@ -627,13 +578,13 @@ public class Board {
 		if(side == Board.WHITE) {
 			if(squares == KINGSIDE) {
 				// check if kingside castle available
-				if(!castleStatus[0]) {
+				if((WKS_CASTLE_MASK & castleRights) != 0) {
 					return false;
 				}
 				pieceMask = 0x60L;
 			} else {
 				// check if queenside castle available
-				if(!castleStatus[1]) {
+				if((WQS_CASTLE_MASK & castleRights) != 0) {
 					return false;
 				}
 				pieceMask = 0xEL;
@@ -641,13 +592,13 @@ public class Board {
 		} else {
 			if(squares == KINGSIDE) {
 				// check if kingside castle available
-				if(!castleStatus[2]) {
+				if((BKS_CASTLE_MASK & castleRights) != 0) {
 					return false;
 				}
 				pieceMask = 0x6000000000000000L;
 			} else {
 				// check if queenside castle available
-				if(!castleStatus[3]) {
+				if((BQS_CASTLE_MASK & castleRights) != 0) {
 					return false;
 				}
 				pieceMask = 0xE00000000000000L;
@@ -655,7 +606,7 @@ public class Board {
 		}
 
 		// check if any pieces between king and rook
-		if((pieceMask & getAllPieces()) == 0L) {
+		if((pieceMask & (whitePieces | blackPieces)) == 0L) {
 			return true;
 		} else {
 			return false;

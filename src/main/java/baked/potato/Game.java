@@ -335,8 +335,7 @@ public class Game {
 		long[] bitboards = new long[12];
 		Arrays.fill(bitboards, 0L);
 
-		boolean[] castleStatus = new boolean[4];
-		Arrays.fill(castleStatus, false);
+		long castleRights = 0x8100000000000081L;
 
 		boolean lastMoveDoublePawnPush = false;
 		Square epTargetSquare = null;
@@ -409,16 +408,16 @@ public class Game {
 			for(char piece : fields[2].toCharArray()) {
 				switch(piece) {
 					case 'K':
-						castleStatus[0] = true;
+						castleRights &= ~0x80L;
 						break;
 					case 'Q':
-						castleStatus[1] = true;
+						castleRights &= ~0x1L;
 						break;
 					case 'k':
-						castleStatus[2] = true;
+						castleRights &= ~0x8000000000000000L;
 						break;
 					case 'q':
-						castleStatus[3] = true;
+						castleRights &= ~0x100000000000000L;
 						break;
 					default:
 						break;
@@ -441,6 +440,6 @@ public class Game {
 
 		// todo: halfmove clock, fullmove number
 
-		return new Board(bitboards, castleStatus, lastMoveDoublePawnPush, epTargetSquare, activeColor);
+		return new Board(bitboards, castleRights, lastMoveDoublePawnPush, epTargetSquare, activeColor);
 	}
 }
