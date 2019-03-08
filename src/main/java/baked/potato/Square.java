@@ -11,7 +11,8 @@ public enum Square {
 	A5(32), B5(33), C5(34), D5(35), E5(36), F5(37), G5(38), H5(39), 
 	A6(40), B6(41), C6(42), D6(43), E6(44), F6(45), G6(46), H6(47), 
 	A7(48), B7(49), C7(50), D7(51), E7(52), F7(53), G7(54), H7(55), 
-	A8(56), B8(57), C8(58), D8(59), E8(60), F8(61), G8(62), H8(63);
+	A8(56), B8(57), C8(58), D8(59), E8(60), F8(61), G8(62), H8(63),
+	NO_SQ(64);
 
 	private static final Square[] valueIndexedEnums = Square.values();
 	public final int intValue;
@@ -25,11 +26,12 @@ public enum Square {
 		"a5", "b5", "c5", "d5", "e5", "f5", "g5", "h5", 
 		"a6", "b6", "c6", "d6", "e6", "f6", "g6", "h6", 
 		"a7", "b7", "c7", "d7", "e7", "f7", "g7", "h7", 
-		"a8", "b8", "c8", "d8", "e8", "f8", "g8", "h8" 
+		"a8", "b8", "c8", "d8", "e8", "f8", "g8", "h8",
+		"-"
 	};
 
 	static {
-		for(int i = 0; i < 64; i++) {
+		for(int i = 0; i < 65; i++) {
 			stringToInt.put(squareStrings[i], i);
 		}
 	}

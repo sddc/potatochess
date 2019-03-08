@@ -2,7 +2,7 @@ package baked.potato;
 
 public class Evaluation {
     // table values from
-    // https://chessprogramming.wikispaces.com/Simplified+evaluation+function
+    // https://www.chessprogramming.org/Simplified_Evaluation_Function
 
     private static final int[] pawnTable = {
         0, 0, 0, 0, 0, 0, 0, 0,

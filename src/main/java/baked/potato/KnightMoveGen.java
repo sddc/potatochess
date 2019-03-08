@@ -12,7 +12,7 @@ public class KnightMoveGen extends MoveGen {
 	}
 
 	@Override	
-	public long genMoveBitboard(Board b, boolean side, int fromSquare) {
+	public long genMoveBitboard(Board b, int fromSquare) {
 		return knightMoves[fromSquare];
 	}
 
@@ -27,15 +27,6 @@ public class KnightMoveGen extends MoveGen {
 
 	@Override
 	public boolean squareAttacked(Board b, boolean side, int square) {
-//		for(Square s : getOccupancyIndexes(b.getKnightBitboard(!side))) {
-//			long knightAttack = knightMoves[s.intValue] & ~b.getSidePieces(!side);
-//
-//			if((knightAttack & square) != 0L) {
-//				return true;
-//			}
-//		}
-//
-//		return false;
 		return (knightMoves[square] & b.getKnightBitboard(!side)) != 0;
 	}
 
@@ -55,24 +46,36 @@ public class KnightMoveGen extends MoveGen {
 	 * _ _ _ 6 _ 5 _ _
 	 *
 	 */
+
+	public static long knightMoves(long knightPos) {
+		long moves = 0;
+
+		// pos 1
+		moves |= (knightPos & clearFileA) << 15;
+		// pos 2
+		moves |= (knightPos & clearFileH) << 17;
+		// pos 3
+		moves |= (knightPos & clearFileH & clearFileG) << 10;
+		// pos 4
+		moves |= (knightPos & clearFileH & clearFileG) >>> 6;
+		// pos 5
+		moves |= (knightPos & clearFileH) >>> 15;
+		// pos 6
+		moves |= (knightPos & clearFileA) >>> 17;
+		// pos 7
+		moves |= (knightPos & clearFileA & clearFileB) >>> 10;
+		// pos 8
+		moves |= (knightPos & clearFileA & clearFileB) << 6;
+
+		return moves;
+	}
+
 	public static long[] genKnightMoves() {
 		long[] genMoves = new long[64];
 		long knightPos = 0x0000000000000001L;
 
 		for(int i = 0; i < 64; i++) {
-			long pos8 = (knightPos & clearFileA & clearFileB) << 6;
-			long pos7 = (knightPos & clearFileA & clearFileB) >>> 10;
-
-			long pos1 = (knightPos & clearFileA) << 15;
-			long pos6 = (knightPos & clearFileA) >>> 17;
-
-			long pos2 = (knightPos & clearFileH) << 17;
-			long pos5 = (knightPos & clearFileH) >>> 15;
-
-			long pos3 = (knightPos & clearFileH & clearFileG) << 10;
-			long pos4 = (knightPos & clearFileH & clearFileG) >>> 6;
-
-			genMoves[i] = pos1 | pos2 | pos3 | pos4 | pos5 | pos6 | pos7 | pos8;
+			genMoves[i] = knightMoves(knightPos);
 			knightPos = knightPos << 1;
 		}
 		return genMoves;

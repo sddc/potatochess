@@ -53,12 +53,7 @@ public abstract class MoveGen {
 		}
 
 		long kingBB = 1L << kingSq;
-//		System.out.println("kingSq " + kingSq);
-//		System.out.printf("rank %d file %d\n", kingSqRank, kingSqFile);
 		long attackerBB = 1L << attackerSq;
-//		System.out.println("attackerSq " + attackerSq);
-//		System.out.printf("rank %d file %d\n", attackerSqRank, attackerSqFile);
-//		System.out.println("shift: " + shift);
 
 		kingBB = shift < 0 ? kingBB >>> Math.abs(shift) : kingBB << shift;
 
@@ -70,8 +65,6 @@ public abstract class MoveGen {
 		return betweenMask;
 	}
 
-//	protected static Board board = null;
-
 	protected static MoveGen[] moveGens = {
 	       PawnMoveGen.getInstance(),	
 	       RookMoveGen.getInstance(),	
@@ -81,31 +74,12 @@ public abstract class MoveGen {
 	       KingMoveGen.getInstance()
 	};
 
-//	public static void setBoard(Board board) {
-//		MoveGen.board = board;
-//	}
-
-//	public static ArrayList<Move> getMoves(boolean side) {
-//		if(board == null) {
-//			// check if board is set
-//			return null;
-//		}
-//
-//		ArrayList<Move> moves = new ArrayList<Move>();
-//
-//		for(MoveGen mg : moveGens) {
-//			moves.addAll(mg.generateMoves(side, false));
-//		}
-//
-//		return moves;
-//	}
-
 	public static Movelist getMoves(Board b) {
 		Movelist ml = new Movelist();
 
 		int kingSquare = Long.numberOfTrailingZeros(b.getKingBitboard(b.getActiveColor()));
 		long kingAttackers = 0;
-		long pinned = moveGens[4].genMoveBitboard(b, b.getActiveColor(), kingSquare) & b.getSidePieces(b.getActiveColor());
+		long pinned = moveGens[4].genMoveBitboard(b, kingSquare) & b.getSidePieces(b.getActiveColor());
 
 		for(MoveGen mg : moveGens) {
 			if(mg instanceof KingMoveGen) continue;
@@ -116,7 +90,7 @@ public abstract class MoveGen {
 		if(numAttackers == 1) {
 			long movemask = kingAttackers;
 			int attackerSquare = Long.numberOfTrailingZeros(kingAttackers);
-			Piece attackerPieceType = b.getPieceType(Square.toEnum(attackerSquare));
+			Piece attackerPieceType = Piece.toEnum(b.getPieceType(attackerSquare));
 
 			if(
 					attackerPieceType == Piece.WHITE_ROOK ||
@@ -130,78 +104,54 @@ public abstract class MoveGen {
 			}
 
 			for (MoveGen mg : moveGens) {
-				mg.generateMoves(b, ml, false, true, movemask, pinned);
+				mg.generateMoves(b, ml, false, true, movemask);
 			}
 		} else if(numAttackers == 2) {
 			// generate only king moves
-			moveGens[5].generateMoves(b, ml, false, true, -1, pinned);
+			moveGens[5].generateMoves(b, ml, false, true, -1);
 		} else {
 			// generate moves normally
 			for (MoveGen mg : moveGens) {
-				mg.generateMoves(b, ml, false, false, -1, pinned);
+				mg.generateMoves(b, ml, false, false, -1);
 			}
 		}
 
 		return ml;
 	}
-
-	public static Movelist getCaptureMoves(Board b) {
-		Movelist ml = new Movelist();
-		boolean kingInCheck = isKingInCheck(b, b.getActiveColor());
-
-		for(MoveGen mg : moveGens) {
-			mg.generateMoves(b, ml, true, kingInCheck, 0, 0);
-		}
-
-		return ml;
-	}
-
-//	public static ArrayList<Move> getCaptureMoves(boolean side) {
-//		if(board == null) {
-//			// check if board is set
-//			return null;
-//		}
-//
-//		ArrayList<Move> moves = new ArrayList<Move>();
-//
-//		for(MoveGen mg : moveGens) {
-//			moves.addAll(mg.generateMoves(, side, true));
-//		}
-//
-//		return moves;
-//	}
 
 	public static long attackedSquares(Board b, boolean side) {
 		long squares = 0;
 
 		for(MoveGen mg : moveGens) {
-			for(long fromBB = b.getPieceBitboard(mg.sidePiece(side)); fromBB != 0; fromBB &= fromBB - 1) {
-				int fromSquare = Long.numberOfTrailingZeros(fromBB);
-				long moveBitboard = 0;
+			if(mg instanceof PawnMoveGen) {
+				squares |= ((PawnMoveGen) mg).genPawnAttack(side, b.getPawnBitboard(side));
+			} else if(mg instanceof KnightMoveGen) {
+				squares |= ((KnightMoveGen) mg).knightMoves(b.getKnightBitboard(side));
+			} else if(mg instanceof KingMoveGen) {
+				squares |= ((KingMoveGen) mg).kingMoves(b.getKingBitboard(side));
+			} else {
+				for(long fromBB = b.getPieceBitboard(mg.sidePiece(side)); fromBB != 0; fromBB &= fromBB - 1) {
+					int fromSquare = Long.numberOfTrailingZeros(fromBB);
+					long moveBitboard = 0;
 
-				if(mg instanceof PawnMoveGen) {
-					moveBitboard = ((PawnMoveGen) mg).pawnAttackMoves[side ? 0 : 1][fromSquare];
-				} else if(mg instanceof BishopMoveGen || mg instanceof RookMoveGen || mg instanceof QueenMoveGen) {
 					b.hideKing(!side);
-					moveBitboard = mg.genMoveBitboard(b, side, fromSquare);
+					moveBitboard = mg.genMoveBitboard(b, fromSquare);
 					b.showKing(!side);
-				} else {
-					moveBitboard = mg.genMoveBitboard(b, side, fromSquare);
-				}
 
-				squares |= moveBitboard;
+					squares |= moveBitboard;
+				}
 			}
 		}
 
-		return squares;
+		return squares & ~b.getSidePieces(side);
 	}
 
-	public void generateMoves(Board b, Movelist ml, boolean captureMovesOnly, boolean kingInCheck, long movemask, long pinned) {
+	public void generateMoves(Board b, Movelist ml, boolean captureMovesOnly, boolean kingInCheck, long movemask) {
 		boolean side = b.getActiveColor();
 
 		for(long fromBB = b.getPieceBitboard(sidePiece(side)); fromBB != 0; fromBB &= fromBB - 1) {
 			int fromSquare = Long.numberOfTrailingZeros(fromBB);
-			long moveBitboard = genMoveBitboard(b, side, fromSquare) & ~b.getSidePieces(side) & movemask;
+			long moveBitboard = genMoveBitboard(b, fromSquare) & ~b.getSidePieces(side) & movemask;
 
 			if (captureMovesOnly) {
 				moveBitboard &= b.getSidePieces(!side);
@@ -209,40 +159,16 @@ public abstract class MoveGen {
 
 			for(long toBB = moveBitboard; toBB != 0; toBB &= toBB - 1) {
 				int toSquare = Long.numberOfTrailingZeros(toBB);
-				Move move = new Move(fromSquare, toSquare, sidePiece(side));
-				// todo: mailbox
-				Piece type = b.getPieceType(Square.toEnum(toSquare));
+				Move move = new Move(fromSquare, toSquare);
+				int type = b.getPieceType(toSquare);
 
-				if (type != Piece.EMPTY) {
-					move.setFlag(Flag.CAPTURE);
-					move.setCapturePieceType(type);
-					move.score = pieceValues[type.intValue] * 100 - pieceValues[sidePiece(side).intValue];
+				if (type != Piece.EMPTY.intValue) {
+					move.score = pieceValues[type] * 100 - pieceValues[sidePiece(side).intValue];
 				}
 
-				if(((fromBB & -fromBB) & pinned) != 0) {
-					if(isValidMove(b, side, move)) {
-						ml.addMove(move);
-					}
-				} else {
-					ml.addMove(move);
-				}
+				ml.addMove(move);
 			}
 		}
-	}
-
-	public boolean isValidMove(Board b, boolean side, Move move) {
-		b.move(side, move);
-
-		for(MoveGen mg : moveGens) {
-			if(mg.squareAttacked(b, side, Long.numberOfTrailingZeros(b.getKingBitboard(side)))) {
-				b.undoMove(side);
-				return false;
-			}
-		}
-
-		b.undoMove(side);
-
-		return true;
 	}
 
 	public static boolean isKingInCheck(Board b, boolean side) {
@@ -255,7 +181,7 @@ public abstract class MoveGen {
 		return false;
 	}
 
-	abstract public long genMoveBitboard(Board b, boolean side, int fromSquare);
+	abstract public long genMoveBitboard(Board b, int fromSquare);
 	abstract public Piece sidePiece(boolean side);
 	abstract public boolean squareAttacked(Board b, boolean side, int square);
 	abstract public long attackers(Board b, boolean side, int square);
@@ -273,29 +199,28 @@ public abstract class MoveGen {
 		return occupancyIndexes;
 	}
 
-	public static long getSquareMask(Square s) {
-		return 1L << s.intValue;
-	}
-
 	public static void sortMoves(Movelist ml, Move pv) {
-		for(int mIdx = 0; mIdx < ml.size(); mIdx++) {
-			Move m = ml.moves[mIdx];
+		if(pv != null) {
+			for (int i = 0; i < ml.size(); i++) {
+				Move m = ml.moves[i];
 
-			if(m.move == pv.move) {
-				m.score = 10000;
+				if (m.move == pv.move) {
+					m.score = 10000;
+				}
 			}
 		}
 
 		// selection sort
-		for(int mIdx = 0; mIdx < ml.size(); mIdx++) {
-			int max = ml.moves[mIdx].score;
+		for(int i = 0; i < ml.size(); i++) {
+			int max = ml.moves[i].score;
 
-			for(int mIdx2 = mIdx + 1; mIdx2 < ml.size(); mIdx2++) {
-				if(ml.moves[mIdx2].score > max) {
-					Move temp = ml.moves[mIdx];
-					ml.moves[mIdx] = ml.moves[mIdx2];
-					ml.moves[mIdx2] = temp;
-					max = ml.moves[mIdx2].score;
+			for(int j = i + 1; j < ml.size(); j++) {
+				if(ml.moves[j].score > max) {
+					max = ml.moves[j].score;
+
+					Move temp = ml.moves[i];
+					ml.moves[i] = ml.moves[j];
+					ml.moves[j] = temp;
 				}
 			}
 		}

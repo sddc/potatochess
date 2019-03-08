@@ -58,8 +58,7 @@ public class Search implements Runnable {
 
             Movelist ml = MoveGen.getMoves(b);
             if(Arrays.asList(ml.moves).contains(m)) {
-                b.move(b.getActiveColor(), m);
-                b.toggleActiveColor();
+                b.move(m);
                 result += result.length() > 0 ? " " + m.toString() : m.toString();
                 ttEntry = b.tt.get(b.getPositionKey());
             } else {
@@ -68,7 +67,7 @@ public class Search implements Runnable {
         }
 
         while(b.getPly() > initialPly) {
-            b.undoMove(b.toggleActiveColor());
+            b.undoMove();
         }
 
         return result;
@@ -109,7 +108,6 @@ public class Search implements Runnable {
                 }
             } else if((ttEntry.flag & TTEntry.flagPvNode) != 0) {
                 pvMove = new Move(ttEntry.bestMove);
-                //System.out.println("pv move set as: " + pvMove);
             }
         }
 
@@ -120,23 +118,19 @@ public class Search implements Runnable {
         }
 
         Movelist ml = MoveGen.getMoves(b);
-        if(ml.size() == 0) {
-            if(MoveGen.isKingInCheck(b, side)) {
-                return -MATE + b.getPly();
-            } else {
-                return 0;
-            }
-        }
-
-        //MoveGen.sortMoves(ml, pvMove);
+        MoveGen.sortMoves(ml, pvMove);
         Move bestMove = null;
-        //System.out.println("depth " + depth + " leftmost move is: " + moves.get(0));
+        int legalMoves = 0;
+        int eval = -INFINITY;
         for(int mIdx = 0; mIdx < ml.size(); mIdx++) {
             Move m = ml.moves[mIdx];
 
-            b.move(side, m);
-            int eval = -negamax(b, depth - 1, -beta, -alpha, b.toggleActiveColor());
-            b.undoMove(b.toggleActiveColor());
+            b.move(m);
+            if(!MoveGen.isKingInCheck(b, side)) {
+                eval = -negamax(b, depth - 1, -beta, -alpha, !side);
+                legalMoves++;
+            }
+            b.undoMove();
             if(stop) return 0;
 
             if(eval > alpha) {
@@ -146,6 +140,14 @@ public class Search implements Runnable {
                 if(alpha >= beta) {
                     break;
                 }
+            }
+        }
+
+        if(legalMoves == 0) {
+            if(MoveGen.isKingInCheck(b, side)) {
+                return -MATE + b.getPly();
+            } else {
+                return 0;
             }
         }
 

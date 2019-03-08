@@ -12,12 +12,12 @@ public class KingMoveGen extends MoveGen {
 	}
 
 	@Override
-	public void generateMoves(Board b, Movelist ml, boolean captureMovesOnly, boolean kingInCheck, long movemask, long pinned) {
+	public void generateMoves(Board b, Movelist ml, boolean captureMovesOnly, boolean kingInCheck, long movemask) {
 		boolean side = b.getActiveColor();
 		long attacked = MoveGen.attackedSquares(b, !side);
 		long fromBB = b.getKingBitboard(side);
 		int fromSquare = Long.numberOfTrailingZeros(fromBB);
-		long moveBitboard = genMoveBitboard(b, side, fromSquare) & ~b.getSidePieces(side) & ~attacked;
+		long moveBitboard = genMoveBitboard(b, fromSquare) & ~b.getSidePieces(side) & ~attacked;
 
 		if(captureMovesOnly) {
 			moveBitboard &= b.getSidePieces(!side);
@@ -25,14 +25,11 @@ public class KingMoveGen extends MoveGen {
 
 		for(long toBB = moveBitboard; toBB != 0; toBB &= toBB - 1) {
 			int toSquare = Long.numberOfTrailingZeros(toBB);
-			Move move = new Move(fromSquare, toSquare, sidePiece(side));
-			// todo: mailbox
-			Piece type = b.getPieceType(Square.toEnum(toSquare));
+			Move move = new Move(fromSquare, toSquare);
+			int type = b.getPieceType(toSquare);
 
-			if(type != Piece.EMPTY) {
-				move.setFlag(Flag.CAPTURE);
-				move.setCapturePieceType(type);
-				move.score = pieceValues[type.intValue] * 100 - pieceValues[sidePiece(side).intValue];
+			if(type != Piece.EMPTY.intValue) {
+				move.score = pieceValues[type] * 100 - pieceValues[sidePiece(side).intValue];
 			}
 
 			ml.addMove(move);
@@ -44,7 +41,7 @@ public class KingMoveGen extends MoveGen {
 	}
 
 	@Override
-	public long genMoveBitboard(Board b, boolean side, int fromSquare) {
+	public long genMoveBitboard(Board b, int fromSquare) {
 		return kingMoves[fromSquare];
 	}
 
@@ -59,15 +56,6 @@ public class KingMoveGen extends MoveGen {
 
 	@Override
 	public boolean squareAttacked(Board b, boolean side, int square) {
-//		for(Square s : getOccupancyIndexes(b.getKingBitboard(!side))) {
-//			long kingAttack = kingMoves[s.intValue] & ~b.getSidePieces(!side);
-//
-//			if((kingAttack & square) != 0L) {
-//				return true;
-//			}
-//		}
-//
-//		return false;
 		return (kingMoves[square] & b.getKingBitboard(!side)) != 0;
 	}
 
@@ -87,30 +75,36 @@ public class KingMoveGen extends MoveGen {
 	 * _ _ _ _ _ _ _ _
 	 *
 	 */
+	public static long kingMoves(long kingPos) {
+		long moves = 0;
+
+		moves |= (kingPos & clearFileA) << 7; // pos 1
+		moves |= (kingPos & clearFileA) >>> 1; // pos 8
+		moves |= (kingPos & clearFileA) >>> 9; // pos 7
+
+		moves |= kingPos << 8; // pos 2
+		moves |= kingPos >>> 8; // pos 6
+
+		moves |= (kingPos & clearFileH) << 9; // pos 3
+		moves |= (kingPos & clearFileH) << 1; // pos 4
+		moves |= (kingPos & clearFileH) >>> 7; // pos 5
+
+		return moves;
+	}
+
 	public static long[] genKingMoves() {
 		long[] genMoves = new long[64];
 		long kingPos = 0x0000000000000001L;
 
 		for(int i = 0; i < 64; i++) {
-			long pos1 = (kingPos & clearFileA) << 7;
-			long pos8 = (kingPos & clearFileA) >>> 1;
-			long pos7 = (kingPos & clearFileA) >>> 9;
-
-			long pos2 = kingPos << 8;
-			long pos6 = kingPos >>> 8;
-
-			long pos3 = (kingPos & clearFileH) << 9;
-			long pos4 = (kingPos & clearFileH) << 1;
-			long pos5 = (kingPos & clearFileH) >>> 7;
-
-			genMoves[i] = pos1 | pos2 | pos3 | pos4 | pos5 | pos6 | pos7 | pos8;
+			genMoves[i] = kingMoves(kingPos);
 			kingPos = kingPos << 1;
 		}
 
 		return genMoves;
 	}
 
-	public boolean castlingSquaresAttacked(Board b, boolean side, boolean squares, long attackedSquares) {
+	public boolean castlingSquaresAttacked(boolean side, boolean squares, long attackedSquares) {
 		// side: true = white, false = black
 		// squares: true = kingside, false = queenside
 		long attackMask;
@@ -129,12 +123,6 @@ public class KingMoveGen extends MoveGen {
 		}
 
 		// check if opponent is attacking squares king passes or ends up on
-		
-//		for(MoveGen mg : moveGens) {
-//			if(mg.squareAttacked(b, side, attackMask)) {
-//				return true;
-//			}
-//		}
 		if((attackedSquares & attackMask) != 0) return true;
 		return false;
 	}
@@ -142,39 +130,29 @@ public class KingMoveGen extends MoveGen {
 	private void genCastlingMoves(Board b, Movelist ml, long attackedSquares) {
 		boolean side = b.getActiveColor();
 		Move move;
-//		// check if king in check
-//		for(MoveGen mg : moveGens) {
-//			if(mg.squareAttacked(b, side, b.getKingBitboard(side))) {
-//				return;
-//			}
-//		}
 
 		// check if kingside castling is available
-		if(b.castlingAvailable(side, Board.KINGSIDE) && !castlingSquaresAttacked(b, side, Board.KINGSIDE, attackedSquares)) {
+		if(b.castlingAvailable(side, Board.KINGSIDE) && !castlingSquaresAttacked(side, Board.KINGSIDE, attackedSquares)) {
 			if(side == Board.WHITE) {
-				move = new Move(Square.E1, Square.G1, Piece.WHITE_KING);
-				move.setFlag(Flag.CASTLE);
-				move.setCastleType(Board.KINGSIDE);
+				move = new Move(Square.E1, Square.G1);
+				move.move |= Move.CASTLE_FLAG;
 				ml.addMove(move);
 			} else {
-				move = new Move(Square.E8, Square.G8, Piece.BLACK_KING);
-				move.setFlag(Flag.CASTLE);
-				move.setCastleType(Board.KINGSIDE);
+				move = new Move(Square.E8, Square.G8);
+				move.move |= Move.CASTLE_FLAG;
 				ml.addMove(move);
 			}
 		}
 
 		// check if queenside castling is available
-		if(b.castlingAvailable(side, Board.QUEENSIDE) && !castlingSquaresAttacked(b, side, Board.QUEENSIDE, attackedSquares)) {
+		if(b.castlingAvailable(side, Board.QUEENSIDE) && !castlingSquaresAttacked(side, Board.QUEENSIDE, attackedSquares)) {
 			if(side == Board.WHITE) {
-				move = new Move(Square.E1, Square.C1, Piece.WHITE_KING);
-				move.setFlag(Flag.CASTLE);
-				move.setCastleType(Board.QUEENSIDE);
+				move = new Move(Square.E1, Square.C1);
+				move.move |= Move.CASTLE_FLAG;
 				ml.addMove(move);
 			} else {
-				move = new Move(Square.E8, Square.C8, Piece.BLACK_KING);
-				move.setFlag(Flag.CASTLE);
-				move.setCastleType(Board.QUEENSIDE);
+				move = new Move(Square.E8, Square.C8);
+				move.move |= Move.CASTLE_FLAG;
 				ml.addMove(move);
 			}
 		}

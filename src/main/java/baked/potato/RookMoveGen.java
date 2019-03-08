@@ -11,7 +11,7 @@ public class RookMoveGen extends SlidingMoveGen {
 	}
 
 	@Override	
-	public long genMoveBitboard(Board b, boolean side, int fromSquare) {
+	public long genMoveBitboard(Board b, int fromSquare) {
 		return getRookMoves(b, fromSquare);
 	}
 	
@@ -26,13 +26,6 @@ public class RookMoveGen extends SlidingMoveGen {
 
 	@Override
 	public boolean squareAttacked(Board b, boolean side, int square) {
-//		for(Square s : getOccupancyIndexes(square)) {
-//			if((b.getRookBitboard(!side) & getRookMoves(b, s.intValue)) != 0L) {
-//				return true;
-//			}
-//		}
-//
-//		return false;
 		return (getRookMoves(b, square) & b.getRookBitboard(!side)) != 0;
 	}
 

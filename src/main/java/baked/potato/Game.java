@@ -16,23 +16,8 @@ public class Game {
 	public Game() {
 		chessboard = parseFen(initialPosition);
 		MoveGen.getMoves(chessboard);
+		chessboard.print();
 		start();
-	}
-
-	public static void printBB(long bb) {
-		for(int i = 56; i >= 0; i -= 8) {
-			long mask = 1L << i;
-			for(int j = i; j < i + 8; j++) {
-				if((bb & mask) != 0) {
-					System.out.print("x ");
-				} else {
-					System.out.print("_ ");
-				}
-
-				mask <<= 1;
-			}
-			System.out.print("\n");
-		}
 	}
 
 	public void start() {
@@ -45,10 +30,6 @@ public class Game {
 			command = preSplitCommand.split(" ");
 
 			switch(command[0]) {
-				case "test":
-					long attacked = MoveGen.attackedSquares(chessboard, !chessboard.getActiveColor());
-					printBB(attacked);
-					break;
 				case "uci":
 					System.out.println("id name Potatochess");
 					System.out.println("id author Sean D");
@@ -80,8 +61,7 @@ public class Game {
 							Move m = ml.moves[mIdx];
 
 							if(m.toString().equals(command[i])) {
-								chessboard.move(chessboard.getActiveColor(), m);
-								chessboard.toggleActiveColor();
+								chessboard.move(m);
 								break;
 							}
 						}
@@ -140,9 +120,7 @@ public class Game {
 						}
 					}
 
-//					System.out.printf("time %d increment %d movestogo %d depth %d\n", time, increment, movesToGo, depth);
 					time = (time / movesToGo) + increment;
-//					System.out.println("calculated time: " + time);
 
 					search = new Search(chessboard, depth, time);
 					searchThread = new Thread(search);
@@ -161,69 +139,21 @@ public class Game {
 
 					break;
 				case "moves":
-					Movelist ml = MoveGen.getMoves(chessboard);
-					Arrays.sort(ml.moves);
-					for(int mIdx = 0; mIdx < ml.size(); mIdx++) {
-						Move m = ml.moves[mIdx];
-						System.out.println(m.toString());
-					}
-					System.out.println(ml.size() + " moves");
-//					ArrayList<Move> mvlist = MoveGen.getCaptureMoves(chessboard.getActiveColor());
-//					Move testPvMove = new Move(Square.F3, Square.H3, Piece.WHITE_QUEEN);
-//					testPvMove.setFlag(Flag.CAPTURE);
-//					testPvMove.setCapturePieceType(Piece.BLACK_PAWN);
-//					System.out.println(mvlist.contains(testPvMove));
-//					MoveGen.sortMoves(mvlist, testPvMove);
-//					for(Move m : mvlist) {
-//						System.out.println(m);
-//					}
 					break;
 				case "print":
 					chessboard.print();
-					System.out.println("Position Key: " + String.format("%016X", chessboard.getPositionKey()));
-                    System.out.print("Score: ");
-                    System.out.println(Evaluation.score(chessboard) / 100.0);
-					if(chessboard.getActiveColor() == Board.WHITE) {
-						System.out.println("Active color: White (uppercase)");
-					} else {
-						System.out.println("Active color: Black (lowercase)");
-					}
-					if(chessboard.lastMoveDPP()) {
-						System.out.println("Last move double pawn push.");
-						System.out.println("en passant target square: " + chessboard.getEpTargetSquare().toString());
-					}
-					break;
-                case "bestmove":
-//                    System.out.println(Search.getBestMove(chessboard, 7, activeColor));
-                    break;
-                case "cmove":
-//                    Move bestMove = Search.getBestMove(chessboard, 3, activeColor);
-//                    if(bestMove != null) {
-//                        chessboard.move(activeColor, bestMove);
-//                    }
-//
-//                    activeColor = chessboard.toggleActiveColor();
-//                    moves = MoveGen.getMoves(activeColor);
-//                    // check if game is over for opponent
-//                    if(gameOver()) {
-//                        return;
-//                    }
-                    break;
-				case "search":
-					//Search.search(chessboard, 10, chessboard.getActiveColor());
 					break;
 				case "move":
 					if(command.length == 2) {
 						if(command[1].length() == 4 || command[1].length() == 5) {
 							boolean foundMove = false;
 
-							ml = MoveGen.getMoves(chessboard);
+							Movelist ml = MoveGen.getMoves(chessboard);
 							for(int mIdx = 0; mIdx < ml.size(); mIdx++) {
 								Move m = ml.moves[mIdx];
 
 								if(m.toString().equals(command[1])) {
-									chessboard.move(chessboard.getActiveColor(), m);
-									chessboard.toggleActiveColor();
+									chessboard.move(m);
 									foundMove = true;
 									break;
 								}
@@ -253,12 +183,12 @@ public class Game {
 				case "perft":
 					depth = Integer.parseInt(command[1]);
 					long elapsed = System.nanoTime();
-					int nodes = perft(chessboard, chessboard.getActiveColor(), depth);
+					int nodes = perft(chessboard, depth);
 					elapsed = System.nanoTime() - elapsed;
 					System.out.printf("nodes: %d\n%.1f ms\n", nodes, elapsed * 1e-6);
 					break;
 				case "divide":
-					divide(chessboard, chessboard.getActiveColor(), Integer.parseInt(command[1]), true);
+					divide(chessboard, Integer.parseInt(command[1]), true);
 					break;
 				case "quit":
 				case "exit":
@@ -281,24 +211,26 @@ public class Game {
 		}
 	}
 
-	public static int perft(Board chessboard, boolean side, int depth) {
+	public static int perft(Board chessboard, int depth) {
 		if(depth == 0) {
 			return 1;
-		}	
+		}
 
 		int nodes = 0;
 
 		Movelist ml = MoveGen.getMoves(chessboard);
 		for(int mIdx = 0; mIdx < ml.size(); mIdx++) {
 			Move m = ml.moves[mIdx];
-			chessboard.move(side, m);
-			nodes += perft(chessboard, chessboard.toggleActiveColor(), depth-1);
-			chessboard.undoMove(chessboard.toggleActiveColor());
+			chessboard.move(m);
+			if(!MoveGen.isKingInCheck(chessboard, !chessboard.getActiveColor())) {
+				nodes += perft(chessboard, depth-1);
+			}
+			chessboard.undoMove();
 		}
 		return nodes;
 	}
 	
-	public static int divide(Board chessboard, boolean side, int depth, boolean initial) {
+	public static int divide(Board chessboard, int depth, boolean initial) {
 		if(depth == 0) {
 			return 1;
 		}	
@@ -312,9 +244,9 @@ public class Game {
 		Movelist ml = MoveGen.getMoves(chessboard);
 		for(int mIdx = 0; mIdx < ml.size(); mIdx++) {
 			Move m = ml.moves[mIdx];
-			chessboard.move(side, m);
-			Nodes += perft(chessboard, chessboard.toggleActiveColor(), depth-1);
-			chessboard.undoMove(chessboard.toggleActiveColor());
+			chessboard.move(m);
+			Nodes += perft(chessboard, depth-1);
+			chessboard.undoMove();
 
 			if(initial) {
 				results.add(new String(m.toString() + " " + Nodes));
@@ -335,10 +267,6 @@ public class Game {
 		long[] bitboards = new long[12];
 		Arrays.fill(bitboards, 0L);
 
-		long castleRights = 0x8100000000000081L;
-
-		boolean lastMoveDoublePawnPush = false;
-		Square epTargetSquare = null;
 		boolean activeColor = Board.WHITE;
 
 		String[] fields = position.split(" ");
@@ -404,6 +332,8 @@ public class Game {
 			throw new IllegalArgumentException("'" + fields[1] + "' is not a valid active color");
 		}
 
+		// assume no castle rights
+		long castleRights = 0x8100000000000081L;
 		if(fields[2].matches("^K?Q?k?q?$|^-$")) {
 			for(char piece : fields[2].toCharArray()) {
 				switch(piece) {
@@ -427,19 +357,23 @@ public class Game {
 			throw new IllegalArgumentException("'" + fields[2] + "' is not a valid castling configuration");
 		}
 
+		int epSquare;
 		if(fields[3].matches("^[a-h][1-8]$|^-$")) {
-			if(fields[3].equals("-")) {
-				// do nothing, epTargetSquare and lastMoveDoublePawnPush already initialized to correct values
-			} else {
-				epTargetSquare = Square.stringToEnum(fields[3]);
-				lastMoveDoublePawnPush = true;
-			}
+			epSquare = Square.stringToEnum(fields[3]).intValue;
 		} else {
 			throw new IllegalArgumentException("'" + fields[3] + "' is not a valid en passant target square");
 		}
 
-		// todo: halfmove clock, fullmove number
+		int fiftyMove = Integer.parseInt(fields[4]);
+		if(fiftyMove < 0) {
+			throw new IllegalArgumentException("'" + fields[4] + "' is not a valid halfmove clock");
+		}
 
-		return new Board(bitboards, castleRights, lastMoveDoublePawnPush, epTargetSquare, activeColor);
+		int fullMove = Integer.parseInt(fields[5]);
+		if(fullMove < 1) {
+			throw new IllegalArgumentException("'" + fields[5] + "' is not a valid fullmove number");
+		}
+
+		return new Board(bitboards, castleRights, epSquare, activeColor, fiftyMove, fullMove);
 	}
 }

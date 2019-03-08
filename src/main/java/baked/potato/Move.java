@@ -3,171 +3,79 @@ package baked.potato;
 import java.util.Objects;
 
 public class Move implements Comparable<Move> {
-	/* baked.potato.Move Encoding
-	 * All flags:
-	 * 	1: true
-	 * 	0: false
-	 *
+	public static final int SQUARE_MASK = 0x3F;
+
+	public static final int FLAG_MASK = 0x3000;
+	public static final int EP_FLAG = 0x1000;
+	public static final int CASTLE_FLAG = 0x2000;
+	public static final int PROMOTION_FLAG = 0x3000;
+
+	public static final int PROMOTION_MASK = 0xC000;
+	public static final int QUEEN_PROMO_TYPE = 0x0;
+	public static final int ROOK_PROMO_TYPE = 0x4000;
+	public static final int KNIGHT_PROMO_TYPE = 0x8000;
+	public static final int BISHOP_PROMO_TYPE = 0xC000;
+
+	/* Move Encoding
 	 * LSB
 	 * Bits 0-5: fromSquare
 	 * Bits 6-11: toSquare
-	 * Bits 12-15: piece type
-	 * Bits 16-19: capture piece type
-	 * Bit 20: double pawn push flag
-	 * Bit 21: capture flag
-	 * Bit 22: en passant capture flag
-	 * Bit 23: castle flag
-	 * Bit 24: promotion flag
-	 * Bit 25: check flag
-	 * Bit 26: checkmate flag
-	 * Bit 27: castle type
-	 * 	0: queenside
-	 * 	1: kingside
-	 * Bits 28-31: promotion type
+	 * Bits 12-13: Flag
+	 * 	01 ep flag
+	 * 	10 castle flag
+	 * 	11 promotion flag
+	 * Bits 14-15: promotion piece
+	 * 	00 queen
+	 * 	01 rook
+	 * 	10 knight
+	 * 	11 bishop
 	 * MSB
 	 */
 	public int move = 0;
 	public int score = 0;
 
-	public Move(Square from, Square to, Piece type) {
+	public Move(Square from, Square to) {
 		// to square
 		move |= to.intValue;
 		move = move << 6;
 		// from square
 		move |= from.intValue;
-		// piece type
-		move |= (type.intValue << 12);
 	}
 
-	public Move(int from, int to, Piece type) {
+	public Move(int from, int to) {
 		// to square
 		move |= to;
 		move = move << 6;
 		// from square
 		move |= from;
-		// piece type
-		move |= (type.intValue << 12);
 	}
 
 	public Move(int move) {
 		this.move = move;
 	}
 
-	public Square getFromSquare() {
-		return Square.toEnum(move & 0x3F);
-	}
-
-	public Square getToSquare() {
-		return Square.toEnum((move & 0xFC0) >>> 6);
-	}
-
-	public Piece getPieceType() {
-		return Piece.toEnum((move & 0xF000) >>> 12);
-	}
-
-	public void setCapturePieceType(Piece type) {
-		move |= (type.intValue << 16);
-	}
-
-	public Piece getCapturePieceType() {
-		return Piece.toEnum((move & 0xF0000) >>> 16);
-	}
-
-	public void setCastleType(boolean squares) {
-		if(squares) {
-			move |= 0x8000000;
-		}
-	}
-
-	public boolean getCastleType() {
-		if((move & 0x8000000) != 0) {
-			return true;
-		} else {
-			return false;
-		}
-	}
-
-	public void setPromotionType(Piece type) {
-		move |= (type.intValue << 28);
-	}
-
-	public Piece getPromotionType() {
-		return Piece.toEnum((move & 0xF0000000) >>> 28);
-	}
-
-	public boolean getFlag(Flag flag) {
-		int mask = getFlagMask(flag);
-
-		if((move & mask) != 0) {
-			return true;
-		} else {
-			return false;
-		}
-	}
-
-	public void setFlag(Flag flag) {
-		int mask = getFlagMask(flag);
-
-		move |= mask;
-	}
-
-	private int getFlagMask(Flag flag) {
-		int mask = 0;
-		switch(flag) {
-			case DOUBLE_PAWN_PUSH:
-				mask = 0x100000;
-				break;
-			case CAPTURE:
-				mask = 0x200000;
-				break;
-			case EP_CAPTURE:
-				mask = 0x400000;
-				break;
-			case CASTLE:
-				mask = 0x800000;
-				break;
-			case PROMOTION:
-				mask = 0x1000000;
-				break;
-			case CHECK:
-				mask = 0x2000000;
-				break;
-			case CHECKMATE:
-				mask = 0x4000000;
-				break;
-			default:
-				break;
-		}
-		return mask;
-	}
-
 	@Override
 	public String toString() {
 		StringBuilder output = new StringBuilder();
-		output.append(getFromSquare().toString());
-		output.append(getToSquare().toString());
-		
-		if(getFlag(Flag.PROMOTION)) {
-			switch(getPromotionType()) {
-				case WHITE_QUEEN:
-				case BLACK_QUEEN:
+		output.append(Square.toEnum(move & SQUARE_MASK).toString());
+		output.append(Square.toEnum((move >>> 6) & SQUARE_MASK).toString());
+
+		if((move & FLAG_MASK) == PROMOTION_FLAG) {
+			switch(move & PROMOTION_MASK) {
+				case QUEEN_PROMO_TYPE:
 					output.append("q");
 					break;
-				case WHITE_ROOK:
-				case BLACK_ROOK:
+				case ROOK_PROMO_TYPE:
 					output.append("r");
 					break;
-				case WHITE_KNIGHT:
-				case BLACK_KNIGHT:
+				case KNIGHT_PROMO_TYPE:
 					output.append("n");
 					break;
-				case WHITE_BISHOP:
-				case BLACK_BISHOP:
+				case BISHOP_PROMO_TYPE:
 					output.append("b");
 					break;
 				default:
 					break;
-
 			}
 		}
 		return output.toString();

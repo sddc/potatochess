@@ -11,7 +11,7 @@ public class BishopMoveGen extends SlidingMoveGen {
 	}
 
 	@Override	
-	public long genMoveBitboard(Board b, boolean side, int fromSquare) {
+	public long genMoveBitboard(Board b, int fromSquare) {
 		return getBishopMoves(b, fromSquare);
 	}
 
@@ -26,13 +26,6 @@ public class BishopMoveGen extends SlidingMoveGen {
 
 	@Override
 	public boolean squareAttacked(Board b, boolean side, int square) {
-//		for(Square s : getOccupancyIndexes(square)) {
-//			if((b.getBishopBitboard(!side) & getBishopMoves(b, s.intValue)) != 0L) {
-//				return true;
-//			}
-//		}
-//
-//		return false;
 		return (getBishopMoves(b, square) & b.getBishopBitboard(!side)) != 0;
 	}
 
