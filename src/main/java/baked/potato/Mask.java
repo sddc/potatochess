@@ -2,7 +2,9 @@ package baked.potato;
 
 public class Mask {
     public static final long[] rank;
+    public static final int[] rankIdx;
     public static final long[] file;
+    public static final int[] fileIdx;
     public static final long[] diag;
     public static final int[] diagIdx;
     public static final long[] antiDiag;
@@ -37,12 +39,22 @@ public class Mask {
             mask <<= 8;
         }
 
+        rankIdx = new int[64];
+        for(int i = 0; i < 64; i++) {
+            rankIdx[i] = i / 8;
+        }
+
         // init rank
         file = new long[8];
         mask = 0x101010101010101L;
         for(int i = 0; i < 8; i++) {
             file[i] = mask;
             mask <<= 1;
+        }
+
+        fileIdx = new int[64];
+        for(int i = 0; i < 64; i++) {
+            fileIdx[i] = i % 8;
         }
 
         // init diag

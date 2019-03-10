@@ -1,207 +1,163 @@
 package baked.potato;
 
-import java.util.Arrays;
-
 public class Magic {
-	private static final long[] rookOccupancyMasks = new long[64];
-	private static final long[] bishopOccupancyMasks = new long[64];
+	private static final long[] rookOccupancyMasks;
+	private static final long[] bishopOccupancyMasks;
 
-	private static final long[] rookMagics = {0x8000805021c000L, 0x2d40200110004000L, 0x2200201018820040L, 0x280080044300080L, 0x30800800821c0080L, 0x480010400801200L, 0xc00019810040122L, 0x100102280460100L, 0x2800040082682L, 0x20b0400042201008L, 0x5000801000200980L, 0xa100801002080084L, 0x2800800800400L, 0x2000200111804L, 0x1311000100460004L, 0x112800100204880L, 0x9208002984000L, 0xf008808020004000L, 0x8404220016008043L, 0x210008008008095L, 0x4210808008000400L, 0x223808024000200L, 0xc000040001104826L, 0x206000108a044L, 0x4100608080004000L, 0xb440022100430080L, 0x8020011010020400L, 0x901180080100284L, 0x8001100050900L, 0x420080800400L, 0x1080420400082110L, 0x804480208000c500L, 0x200400220800080L, 0x2050042000c04000L, 0x40110149002000L, 0x240800800801000L, 0x2045101000800L, 0x40801200801400L, 0x1a0024020001a8L, 0x204b40042000081L, 0x261846040088008L, 0x84420005007c000L, 0xa40823202420021L, 0x120141220018L, 0x104400800801800cL, 0x8211000400090002L, 0x2800080110040002L, 0x884050082460004L, 0x408801940002480L, 0x4820021004200L, 0x4800881142006200L, 0x2220080080b00580L, 0x20100c408001100L, 0x41009804000300L, 0x9058020108101400L, 0x82010402408200L, 0x80802230420102L, 0x8000210040005185L, 0x210420060491082L, 0x41002008051001L, 0x806001021040802L, 0x102000410050802L, 0x10c010880e0d1044L, 0x10a040a8840902L};
+	// using best magics from https://www.chessprogramming.org/Best_Magics_so_far
 
-	private static final long[] bishopMagics = {0x808a01882811100L, 0x103100400818005L, 0x8018080100210480L, 0x1024040088001200L, 0x12121010300068L, 0x104024241000eL, 0x881015002200040L, 0x220050088800L, 0x20400682020200L, 0x200222022020L, 0x90802088008L, 0x2040282084e00060L, 0x200011140048840L, 0x408850108421000L, 0x840088280851L, 0x40011108a2100204L, 0x6008102020018200L, 0x10000847680490L, 0x84010214040409L, 0x220480a80a004000L, 0x8002802400a00000L, 0xc004100201420800L, 0x244010043441041L, 0x20204001010390c0L, 0x502404009088810L, 0x4004200010824984L, 0x1d00680910048420L, 0x8204040000401080L, 0x8000840000806009L, 0x200043003880a005L, 0x4007100880400L, 0x400200880a240912L, 0x32021280202008L, 0x284030420200414L, 0x8000108601502400L, 0x3000020080080080L, 0x50100200100a0050L, 0xa4080200202081L, 0x1030200041201L, 0x2204a208650040L, 0x19180864444080L, 0x1044100c000900L, 0x202428021006L, 0x11402011100800L, 0x412012000301L, 0x4401000408110c0L, 0x410500080ac0108L, 0x4108120099200200L, 0xa04044504702000L, 0x2001110310220000L, 0x20142220000L, 0x1204118084044004L, 0x860242c0102L, 0x1001002100c4038L, 0x40400808090c4020L, 0x2110841b12c20010L, 0x8020101480a0840L, 0x30004200846000L, 0x4000001100431080L, 0x1600202000840402L, 0x30080000450c402L, 0x8004011220080L, 0x401104222042401L, 0x1c00a0421007100L};
+	private static final long[] rookMagics = {
+		0x008000805021c000L, 0x2d40200110004000L, 0x2200201018820040L, 0x0280080044300080L, 0x30800800821c0080L, 0x0480010400801200L, 0x0c00019810040122L, 0x0100102280460100L,
+		0x0002800040082682L, 0x20b0400042201008L, 0x5000801000200980L, 0xa100801002080084L, 0x0002800800800400L, 0x0002000200111804L, 0x1311000100460004L, 0x0112800100204880L,
+		0x0009208002984000L, 0xf008808020004000L, 0x8404220016008043L, 0x0210008008008095L, 0x4210808008000400L, 0x0223808024000200L, 0xc000040001104826L, 0x000206000108a044L,
+		0x4100608080004000L, 0xb440022100430080L, 0x8020011010020400L, 0x0901180080100284L, 0x0008001100050900L, 0x0000420080800400L, 0x1080420400082110L, 0x804480208000c500L,
+		0x0200400220800080L, 0x2050042000c04000L, 0x0040110149002000L, 0x0240800800801000L, 0x0002045101000800L, 0x0040801200801400L, 0x001a0024020001a8L, 0x0204b40042000081L,
+		0x0261846040088008L, 0x084420005007c000L, 0x0a40823202420021L, 0x0000120141220018L, 0x104400800801800cL, 0x8211000400090002L, 0x2800080110040002L, 0x0884050082460004L,
+		0x48FFFE99FECFAA00L, 0x48FFFE99FECFAA00L, 0x497FFFADFF9C2E00L, 0x613FFFDDFFCE9200L, 0xffffffe9ffe7ce00L, 0xfffffff5fff3e600L, 0x0003ff95e5e6a4c0L, 0x510FFFF5F63C96A0L,
+		0xEBFFFFB9FF9FC526L, 0x61FFFEDDFEEDAEAEL, 0x53BFFFEDFFDEB1A2L, 0x127FFFB9FFDFB5F6L, 0x411FFFDDFFDBF4D6L, 0x0102000410050802L, 0x0003ffef27eebe74L, 0x7645FFFECBFEA79EL
+	};
 
-	private static final int[] rookShifts = {52, 53, 53, 53, 53, 53, 53, 52, 53, 54, 54, 54, 54, 54, 54, 53, 53, 54, 54, 54, 54, 54, 54, 53, 53, 54, 54, 54, 54, 54, 54, 53, 53, 54, 54, 54, 54, 54, 54, 53, 53, 54, 54, 54, 54, 54, 54, 53, 53, 54, 54, 54, 54, 54, 54, 53, 52, 53, 53, 53, 53, 53, 53, 52};
+	private static final int[] rookShifts = {
+		12, 11, 11, 11, 11, 11, 11, 12,
+		11, 10, 10, 10, 10, 10, 10, 11,
+		11, 10, 10, 10, 10, 10, 10, 11,
+		11, 10, 10, 10, 10, 10, 10, 11,
+		11, 10, 10, 10, 10, 10, 10, 11,
+		11, 10, 10, 10, 10, 10, 10, 11,
+		10, 9, 9, 9, 9, 9, 9, 10,
+		11, 10, 10, 10, 10, 11, 10, 11
+	};
 
-	private static final int[] bishopShifts = {58, 59, 59, 59, 59, 59, 59, 58, 59, 59, 59, 59, 59, 59, 59, 59, 59, 59, 57, 57, 57, 57, 59, 59, 59, 59, 57, 55, 55, 57, 59, 59, 59, 59, 57, 55, 55, 57, 59, 59, 59, 59, 57, 57, 57, 57, 59, 59, 59, 59, 59, 59, 59, 59, 59, 59, 58, 59, 59, 59, 59, 59, 59, 58};
+	private static final long[] bishopMagics = {
+		0xffedf9fd7cfcffffL, 0xfc0962854a77f576L, 0x8018080100210480L, 0x1024040088001200L, 0x0012121010300068L, 0x000104024241000eL, 0xfc0a66c64a7ef576L, 0x7ffdfdfcbd79ffffL,
+		0xfc0846a64a34fff6L, 0xfc087a874a3cf7f6L, 0x0000090802088008L, 0x2040282084e00060L, 0x0200011140048840L, 0x0408850108421000L, 0xfc0864ae59b4ff76L, 0x3c0860af4b35ff76L,
+		0x73C01AF56CF4CFFBL, 0x41A01CFAD64AAFFCL, 0x0084010214040409L, 0x220480a80a004000L, 0x8002802400a00000L, 0xc004100201420800L, 0x7c0c028f5b34ff76L, 0xfc0a028e5ab4df76L,
+		0x0502404009088810L, 0x4004200010824984L, 0x1d00680910048420L, 0x8204040000401080L, 0x8000840000806009L, 0x200043003880a005L, 0x0004007100880400L, 0x400200880a240912L,
+		0x0032021280202008L, 0x0284030420200414L, 0x8000108601502400L, 0x3000020080080080L, 0x50100200100a0050L, 0x00a4080200202081L, 0x0001030200041201L, 0x002204a208650040L,
+		0xDCEFD9B54BFCC09FL, 0xF95FFA765AFD602BL, 0x0000202428021006L, 0x0011402011100800L, 0x0000412012000301L, 0x04401000408110c0L, 0x43ff9a5cf4ca0c01L, 0x4BFFCD8E7C587601L,
+		0xfc0ff2865334f576L, 0xfc0bf6ce5924f576L, 0x0000020142220000L, 0x1204118084044004L, 0x00000860242c0102L, 0x01001002100c4038L, 0xc3ffb7dc36ca8c89L, 0xc3ff8a54f4ca2c89L,
+		0xfffffcfcfd79edffL, 0xfc0863fccb147576L, 0x4000001100431080L, 0x1600202000840402L, 0x030080000450c402L, 0x0008004011220080L, 0xfc087e8e4bb2f736L, 0x43ff9e4ef4ca2c89L
+	};
+
+	private static final int[] bishopShifts = {
+		5, 4, 5, 5, 5, 5, 4, 5,
+		4, 4, 5, 5, 5, 5, 4, 4,
+		4, 4, 7, 7, 7, 7, 4, 4,
+		5, 5, 7, 9, 9, 7, 5, 5,
+		5, 5, 7, 9, 9, 7, 5, 5,
+		4, 4, 7, 7, 7, 7, 4, 4,
+		4, 4, 5, 5, 5, 5, 4, 4,
+		5, 4, 5, 5, 5, 5, 4, 5
+	};
 
 	private static long[][] rookMoves = new long[64][];
 	private static long[][] bishopMoves = new long[64][];
 
 	static {
-		// fill occupancy mask arrays	
-		long square = 1L;
-		for(int i = 0; i < 64; i++) {
-			rookOccupancyMasks[i] = genRookOccupancyMask(square);
-			bishopOccupancyMasks[i] = genBishopOccupancyMask(square);
-			square = square << 1;
-		}
+		// fill occupancy mask arrays
+		rookOccupancyMasks = genRookOccupancyMask();
+		bishopOccupancyMasks = genBishopOccupancyMask();
+
 		genMagicMoves(true, rookOccupancyMasks, rookMagics, rookShifts, rookMoves);
 		genMagicMoves(false, bishopOccupancyMasks, bishopMagics, bishopShifts, bishopMoves);
 	}
 
 	public static long getRookMoves(int squareIndex, long occupancy) {
 		occupancy &= rookOccupancyMasks[squareIndex];
-		int index = (int)((rookMagics[squareIndex] * occupancy) >>> rookShifts[squareIndex]);
+		int index = (int)((rookMagics[squareIndex] * occupancy) >>> (64 - rookShifts[squareIndex]));
 		return rookMoves[squareIndex][index];
 	}
 
 	public static long getBishopMoves(int squareIndex, long occupancy) {
 		occupancy &= bishopOccupancyMasks[squareIndex];
-		int index = (int)((bishopMagics[squareIndex] * occupancy) >>> bishopShifts[squareIndex]);
+		int index = (int)((bishopMagics[squareIndex] * occupancy) >>> (64 - bishopShifts[squareIndex]));
 		return bishopMoves[squareIndex][index];
 	}
 
-	public static void genMagicMoves(boolean type, long[] occupancyMasks, long[] magics, int[] shifts, long[][] moves) {
-		long square = 1L;
+	private static void genMagicMoves(boolean rook, long[] occMasks, long[] magics, int[] shifts, long[][] moves) {
+		for(int sq = 0; sq < 64; sq++) {
+			moves[sq] = new long[1 << shifts[sq]];
+
+			long[] occPerms = genCombos(occMasks[sq]);
+			for(int c = 0; c < occPerms.length; c++) {
+				long move = 0;
+				if(rook) {
+					move |= genMove(sq, occPerms[c], Mask.rank[Mask.rankIdx[sq]]);
+					move |= genMove(sq, occPerms[c], Mask.file[Mask.fileIdx[sq]]);
+				} else {
+					move |= genMove(sq, occPerms[c], Mask.diag[Mask.diagIdx[sq]]);
+					move |= genMove(sq, occPerms[c], Mask.antiDiag[Mask.antiDiagIdx[sq]]);
+				}
+
+				int index = (int)((magics[sq] * occPerms[c]) >>> (64 - shifts[sq]));
+				moves[sq][index] = move;
+			}
+		}
+	}
+
+	private static long genMove(int sq, long occ, long mask) {
+		// https://www.chessprogramming.org/Hyperbola_Quintessence
+		long sqMask = 1L << sq;
+		occ &= mask;
+		return ((occ - sqMask) ^ Long.reverse(Long.reverse(occ) - Long.reverse(sqMask))) & mask;
+	}
+
+	private static long[] genCombos(long x) {
+		int numBits = Long.bitCount(x);
+		if(numBits == 0) return null;
+		long[] combos = new long[1 << numBits];
+		long[] setBits = new long[numBits];
+
+		int index = 0;
+		long temp = x;
+		while(temp != 0) {
+			long setBit = Long.lowestOneBit(temp);
+			setBits[index++] = setBit;
+			temp &= ~setBit;
+		}
+
+		for(int bitCombo = 0; bitCombo < (1 << numBits); bitCombo++) {
+			long c = 0;
+
+			long mask = 1;
+			for(int bitPosition = 0; bitPosition < numBits; bitPosition++) {
+				if((bitCombo & mask) != 0) {
+					c |= setBits[bitPosition];
+				}
+
+				mask <<= 1;
+			}
+
+			combos[bitCombo] = c;
+		}
+
+		return combos;
+	}
+
+	private static long[] genRookOccupancyMask() {
+		long[] masks = new long[64];
 
 		for(int i = 0; i < 64; i++) {
-			long occupancyMask = occupancyMasks[i];
-			long[] variations = genOccupancyVariations(occupancyMask, MoveGen.getOccupancyIndexes(occupancyMask));
-			long[] resultMoves = genResultMoves(type, variations, square);
-
-			moves[i] = new long[(int)(1L << Long.bitCount(occupancyMask))];
-			Arrays.fill(moves[i], 0L);
-
-			for(int j = 0; j < variations.length; j++) {
-				int moveIndex = (int)((magics[i] * variations[j]) >>> shifts[i]);
-				if(moves[i][moveIndex] == 0L) {
-					moves[i][moveIndex] = resultMoves[j];
-				}
-			}
-
-			square = square << 1;
+			// & clears bits on file a and file h
+			masks[i] |= Mask.rank[i / 8] & 0x7E7E7E7E7E7E7E7EL;
+			// & clears bits on rank 1 and rank 8
+			masks[i] |= Mask.file[i % 8] & 0xFFFFFFFFFFFF00L;
+			// clear bit i
+			masks[i] &= ~(1L << i);
 		}
+
+		return masks;
 	}
 
-	public static long[] genOccupancyVariations(long occupancy, Square[] occupancyIndexes) {
-		long mask = 1L;
-		long[] occupancyVariations = new long[(int)(1L << Long.bitCount(occupancy))];
-		int index = 0;
+	private static long[] genBishopOccupancyMask() {
+		long[] masks = new long[64];
 
-		for(long i = 0L; i <= (int)(1L << Long.bitCount(occupancy))-1; i++) {
-			long variation = i;
-			long occupancyVariation = 0L;
-
-			for(int j = 0; j < occupancyIndexes.length; j++) {
-				if((variation & mask) != 0L) {
-					occupancyVariation |= mask << occupancyIndexes[j].intValue;
-				}
-				variation = variation >>> 1;
-			}
-			occupancyVariations[index++] = occupancyVariation;
+		for(int i = 0; i < 64; i++) {
+			masks[i] |= Mask.diag[Mask.diagIdx[i]] | Mask.antiDiag[Mask.antiDiagIdx[i]];
+			// clear bit i and border bits
+			masks[i] &= ~(1L << i | 0xFF818181818181FFL);
 		}
 
-		return occupancyVariations;
-	}
-
-	public static long[] genResultMoves(boolean type, long[] variations, long square) {
-		// type = true: rook, false: bishop
-		long[] moves = new long[variations.length];
-
-		for(int i = 0; i < variations.length; i++) {
-			long move = 0L;
-
-			if(type) {
-				// +8
-				move |= genRayMove(true, 8, square, ~0L, variations[i]);
-				// -8
-				move |= genRayMove(false, 8, square, ~0L, variations[i]);
-				// +1
-				move |= genRayMove(true, 1, square, Mask.clearFileH, variations[i]);
-				// -1 
-				move |= genRayMove(false, 1, square, Mask.clearFileA, variations[i]);
-			} else {
-				// +7
-				move |= genRayMove(true, 7, square, Mask.clearFileA, variations[i]);
-				// -9
-				move |= genRayMove(false, 9, square, Mask.clearFileA, variations[i]);
-				// -7 
-				move |= genRayMove(false, 7, square, Mask.clearFileH, variations[i]);
-				// +9 
-				move |= genRayMove(true, 9, square, Mask.clearFileH, variations[i]);
-			}
-
-			moves[i] = move;
-		}
-		return moves;
-	}
-
-	public static long shift(boolean direction, int amount, long mask) {
-		// true: left, false: right
-		if(direction) {
-			return mask << amount;
-		} else {
-			return mask >>> amount;
-		}
-	}
-
-	public static long genRayMask(boolean direction, int amount, long square, long clear) {
-		long rayMask = 0L;
-
-		long mask = shift(direction, amount, square & clear);
-		while(mask != 0L) {
-			rayMask |= mask;
-			mask = shift(direction, amount, mask & clear);
-		}
-
-		return rayMask;
-	}
-
-	public static long genRayMove(boolean direction, int amount, long square, long clear, long variation) {
-		long rayMove = 0L;
-
-		long mask = shift(direction, amount, square & clear);
-		while(mask != 0L) {
-			rayMove |= mask;
-
-			if((mask & variation) != 0L) {
-				break;
-			}
-			mask = shift(direction, amount, mask & clear);
-		}
-
-		return rayMove;
-	}
-
-	public static long genRookOccupancyMask(long square) {
-		long mask = 0L;
-
-		// +8
-		mask |= genRayMask(true, 8, square, ~0L);
-		// -8
-		mask |= genRayMask(false, 8, square, ~0L);
-		// +1
-		mask |= genRayMask(true, 1, square, Mask.clearFileH);
-		// -1 
-		mask |= genRayMask(false, 1, square, Mask.clearFileA);
-
-		return clearEdges(square, mask);
-	}
-
-	public static long genBishopOccupancyMask(long square) {
-		long mask = 0L;
-
-		// +7
-		mask |= genRayMask(true, 7, square, Mask.clearFileA);
-		// -9
-		mask |= genRayMask(false, 9, square, Mask.clearFileA);
-		// -7 
-		mask |= genRayMask(false, 7, square, Mask.clearFileH);
-		// +9 
-		mask |= genRayMask(true, 9, square, Mask.clearFileH);
-
-		return clearEdges(square, mask);
-	}
-
-	public static long clearEdges(long square, long mask) {
-		// clear edges (rank 1, rank 8, file A, and file H) on mask
-		// if square is not on their respective edge
-
-		if((Mask.maskRank1 & square) == 0L) {
-			mask &= Mask.clearRank1;
-		}
-
-		if((Mask.maskRank8 & square) == 0L) {
-			mask &= Mask.clearRank8;
-		}
-
-		if((Mask.maskFileA & square) == 0L) {
-			mask &= Mask.clearFileA;
-		}
-
-		if((Mask.maskFileH & square) == 0L) {
-			mask &= Mask.clearFileH;
-		}
-		return mask;
+		return masks;
 	}
 }
