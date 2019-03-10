@@ -55,7 +55,7 @@ public class Board {
 
 		if(epSquare != Square.NO_SQ.intValue) {
 			long epSquareMask = 1L << epSquare + (activeColor ? -8 : 8);
-			long sidePawns = ((epSquareMask & MoveGen.clearFileH) << 1) | ((epSquareMask & MoveGen.clearFileA) >>> 1);
+			long sidePawns = ((epSquareMask & Mask.clearFileH) << 1) | ((epSquareMask & Mask.clearFileA) >>> 1);
 
 			if (activeColor && (sidePawns & bitboards[Piece.WHITE_PAWN.intValue]) != 0 ||
 					!activeColor && (sidePawns & bitboards[Piece.BLACK_PAWN.intValue]) != 0) {
@@ -287,8 +287,6 @@ public class Board {
 		}
 		System.out.println("     A   B   C   D   E   F   G   H");
 		System.out.println("Position Key: " + String.format("%016X", positionKey));
-		System.out.print("Score: ");
-		System.out.println(Evaluation.score(this) / 100.0);
 		if(activeColor == Board.WHITE) {
 			System.out.println("Active color: White (uppercase)");
 		} else {
@@ -439,17 +437,17 @@ public class Board {
 			} else {
 
 				// set ep square
-				if(activeColor && Long.bitCount((fromMask | toMask) & (MoveGen.maskRank2 | MoveGen.maskRank4)) == 2) {
+				if(activeColor && Long.bitCount((fromMask | toMask) & (Mask.maskRank2 | Mask.maskRank4)) == 2) {
 					// white moved forward 2 squares
-					long sidePawns = ((toMask & MoveGen.clearFileH) << 1) | ((toMask & MoveGen.clearFileA) >>> 1);
+					long sidePawns = ((toMask & Mask.clearFileH) << 1) | ((toMask & Mask.clearFileA) >>> 1);
 
 					if((sidePawns & bitboards[Piece.BLACK_PAWN.intValue]) != 0) {
 						epSquare = toSquare - 8;
 						positionKey ^= Zobrist.randEp[epSquare];
 					}
-				} else if(!activeColor && Long.bitCount((fromMask | toMask) & (MoveGen.maskRank7 | MoveGen.maskRank5)) == 2) {
+				} else if(!activeColor && Long.bitCount((fromMask | toMask) & (Mask.maskRank7 | Mask.maskRank5)) == 2) {
 					// black moved forward 2 squares
-					long sidePawns = ((toMask & MoveGen.clearFileH) << 1) | ((toMask & MoveGen.clearFileA) >>> 1);
+					long sidePawns = ((toMask & Mask.clearFileH) << 1) | ((toMask & Mask.clearFileA) >>> 1);
 
 					if((sidePawns & bitboards[Piece.WHITE_PAWN.intValue]) != 0) {
 						epSquare = toSquare + 8;

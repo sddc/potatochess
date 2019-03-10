@@ -1,6 +1,6 @@
 package baked.potato;
 
-public class BishopMoveGen extends SlidingMoveGen {
+public class BishopMoveGen extends MoveGen {
 	private static BishopMoveGen instance = new BishopMoveGen();
 
 	private BishopMoveGen() {
@@ -12,7 +12,7 @@ public class BishopMoveGen extends SlidingMoveGen {
 
 	@Override	
 	public long genMoveBitboard(Board b, int fromSquare) {
-		return getBishopMoves(b, fromSquare);
+		return Magic.getBishopMoves(fromSquare, b.getAllPieces());
 	}
 
 	@Override
@@ -26,11 +26,11 @@ public class BishopMoveGen extends SlidingMoveGen {
 
 	@Override
 	public boolean squareAttacked(Board b, boolean side, int square) {
-		return (getBishopMoves(b, square) & b.getBishopBitboard(!side)) != 0;
+		return (Magic.getBishopMoves(square, b.getAllPieces()) & b.getBishopBitboard(!side)) != 0;
 	}
 
 	@Override
 	public long attackers(Board b, boolean side, int square) {
-		return getBishopMoves(b, square) & b.getBishopBitboard(!side);
+		return Magic.getBishopMoves(square, b.getAllPieces()) & b.getBishopBitboard(!side);
 	}
 }

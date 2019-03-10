@@ -15,7 +15,6 @@ public class Game {
 
 	public Game() {
 		chessboard = parseFen(initialPosition);
-		MoveGen.getMoves(chessboard);
 		chessboard.print();
 		start();
 	}

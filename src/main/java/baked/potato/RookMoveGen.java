@@ -1,6 +1,6 @@
 package baked.potato;
 
-public class RookMoveGen extends SlidingMoveGen {
+public class RookMoveGen extends MoveGen {
 	private static RookMoveGen instance = new RookMoveGen();
 
 	private RookMoveGen() {
@@ -12,7 +12,7 @@ public class RookMoveGen extends SlidingMoveGen {
 
 	@Override	
 	public long genMoveBitboard(Board b, int fromSquare) {
-		return getRookMoves(b, fromSquare);
+		return Magic.getRookMoves(fromSquare, b.getAllPieces());
 	}
 	
 	@Override
@@ -26,11 +26,11 @@ public class RookMoveGen extends SlidingMoveGen {
 
 	@Override
 	public boolean squareAttacked(Board b, boolean side, int square) {
-		return (getRookMoves(b, square) & b.getRookBitboard(!side)) != 0;
+		return (Magic.getRookMoves(square, b.getAllPieces()) & b.getRookBitboard(!side)) != 0;
 	}
 
 	@Override
 	public long attackers(Board b, boolean side, int square) {
-		return getRookMoves(b, square) & b.getRookBitboard(!side);
+		return Magic.getRookMoves(square, b.getAllPieces()) & b.getRookBitboard(!side);
 	}
 }

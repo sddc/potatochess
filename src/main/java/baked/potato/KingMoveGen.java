@@ -78,16 +78,16 @@ public class KingMoveGen extends MoveGen {
 	public static long kingMoves(long kingPos) {
 		long moves = 0;
 
-		moves |= (kingPos & clearFileA) << 7; // pos 1
-		moves |= (kingPos & clearFileA) >>> 1; // pos 8
-		moves |= (kingPos & clearFileA) >>> 9; // pos 7
+		moves |= (kingPos & Mask.clearFileA) << 7; // pos 1
+		moves |= (kingPos & Mask.clearFileA) >>> 1; // pos 8
+		moves |= (kingPos & Mask.clearFileA) >>> 9; // pos 7
 
 		moves |= kingPos << 8; // pos 2
 		moves |= kingPos >>> 8; // pos 6
 
-		moves |= (kingPos & clearFileH) << 9; // pos 3
-		moves |= (kingPos & clearFileH) << 1; // pos 4
-		moves |= (kingPos & clearFileH) >>> 7; // pos 5
+		moves |= (kingPos & Mask.clearFileH) << 9; // pos 3
+		moves |= (kingPos & Mask.clearFileH) << 1; // pos 4
+		moves |= (kingPos & Mask.clearFileH) >>> 7; // pos 5
 
 		return moves;
 	}

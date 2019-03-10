@@ -2,7 +2,7 @@ package baked.potato;
 
 import java.util.Arrays;
 
-public abstract class SlidingMoveGen extends MoveGen {
+public class Magic {
 	private static final long[] rookOccupancyMasks = new long[64];
 	private static final long[] bishopOccupancyMasks = new long[64];
 
@@ -29,14 +29,14 @@ public abstract class SlidingMoveGen extends MoveGen {
 		genMagicMoves(false, bishopOccupancyMasks, bishopMagics, bishopShifts, bishopMoves);
 	}
 
-	public long getRookMoves(Board b, int squareIndex) {
-		long occupancy = b.getAllPieces() & rookOccupancyMasks[squareIndex];
+	public static long getRookMoves(int squareIndex, long occupancy) {
+		occupancy &= rookOccupancyMasks[squareIndex];
 		int index = (int)((rookMagics[squareIndex] * occupancy) >>> rookShifts[squareIndex]);
 		return rookMoves[squareIndex][index];
 	}
 
-	public long getBishopMoves(Board b, int squareIndex) {
-		long occupancy = b.getAllPieces() & bishopOccupancyMasks[squareIndex];
+	public static long getBishopMoves(int squareIndex, long occupancy) {
+		occupancy &= bishopOccupancyMasks[squareIndex];
 		int index = (int)((bishopMagics[squareIndex] * occupancy) >>> bishopShifts[squareIndex]);
 		return bishopMoves[squareIndex][index];
 	}
@@ -46,7 +46,7 @@ public abstract class SlidingMoveGen extends MoveGen {
 
 		for(int i = 0; i < 64; i++) {
 			long occupancyMask = occupancyMasks[i];
-			long[] variations = genOccupancyVariations(occupancyMask, getOccupancyIndexes(occupancyMask));
+			long[] variations = genOccupancyVariations(occupancyMask, MoveGen.getOccupancyIndexes(occupancyMask));
 			long[] resultMoves = genResultMoves(type, variations, square);
 
 			moves[i] = new long[(int)(1L << Long.bitCount(occupancyMask))];
@@ -97,18 +97,18 @@ public abstract class SlidingMoveGen extends MoveGen {
 				// -8
 				move |= genRayMove(false, 8, square, ~0L, variations[i]);
 				// +1
-				move |= genRayMove(true, 1, square, clearFileH, variations[i]);
+				move |= genRayMove(true, 1, square, Mask.clearFileH, variations[i]);
 				// -1 
-				move |= genRayMove(false, 1, square, clearFileA, variations[i]);
+				move |= genRayMove(false, 1, square, Mask.clearFileA, variations[i]);
 			} else {
 				// +7
-				move |= genRayMove(true, 7, square, clearFileA, variations[i]);
+				move |= genRayMove(true, 7, square, Mask.clearFileA, variations[i]);
 				// -9
-				move |= genRayMove(false, 9, square, clearFileA, variations[i]);
+				move |= genRayMove(false, 9, square, Mask.clearFileA, variations[i]);
 				// -7 
-				move |= genRayMove(false, 7, square, clearFileH, variations[i]);
+				move |= genRayMove(false, 7, square, Mask.clearFileH, variations[i]);
 				// +9 
-				move |= genRayMove(true, 9, square, clearFileH, variations[i]);
+				move |= genRayMove(true, 9, square, Mask.clearFileH, variations[i]);
 			}
 
 			moves[i] = move;
@@ -161,9 +161,9 @@ public abstract class SlidingMoveGen extends MoveGen {
 		// -8
 		mask |= genRayMask(false, 8, square, ~0L);
 		// +1
-		mask |= genRayMask(true, 1, square, clearFileH);
+		mask |= genRayMask(true, 1, square, Mask.clearFileH);
 		// -1 
-		mask |= genRayMask(false, 1, square, clearFileA);
+		mask |= genRayMask(false, 1, square, Mask.clearFileA);
 
 		return clearEdges(square, mask);
 	}
@@ -172,13 +172,13 @@ public abstract class SlidingMoveGen extends MoveGen {
 		long mask = 0L;
 
 		// +7
-		mask |= genRayMask(true, 7, square, clearFileA);
+		mask |= genRayMask(true, 7, square, Mask.clearFileA);
 		// -9
-		mask |= genRayMask(false, 9, square, clearFileA);
+		mask |= genRayMask(false, 9, square, Mask.clearFileA);
 		// -7 
-		mask |= genRayMask(false, 7, square, clearFileH);
+		mask |= genRayMask(false, 7, square, Mask.clearFileH);
 		// +9 
-		mask |= genRayMask(true, 9, square, clearFileH);
+		mask |= genRayMask(true, 9, square, Mask.clearFileH);
 
 		return clearEdges(square, mask);
 	}
@@ -187,20 +187,20 @@ public abstract class SlidingMoveGen extends MoveGen {
 		// clear edges (rank 1, rank 8, file A, and file H) on mask
 		// if square is not on their respective edge
 
-		if((maskRank1 & square) == 0L) {
-			mask &= clearRank1;
+		if((Mask.maskRank1 & square) == 0L) {
+			mask &= Mask.clearRank1;
 		}
 
-		if((maskRank8 & square) == 0L) {
-			mask &= clearRank8;
+		if((Mask.maskRank8 & square) == 0L) {
+			mask &= Mask.clearRank8;
 		}
 
-		if((maskFileA & square) == 0L) {
-			mask &= clearFileA;
+		if((Mask.maskFileA & square) == 0L) {
+			mask &= Mask.clearFileA;
 		}
 
-		if((maskFileH & square) == 0L) {
-			mask &= clearFileH;
+		if((Mask.maskFileH & square) == 0L) {
+			mask &= Mask.clearFileH;
 		}
 		return mask;
 	}

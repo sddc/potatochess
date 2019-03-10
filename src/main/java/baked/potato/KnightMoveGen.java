@@ -51,21 +51,21 @@ public class KnightMoveGen extends MoveGen {
 		long moves = 0;
 
 		// pos 1
-		moves |= (knightPos & clearFileA) << 15;
+		moves |= (knightPos & Mask.clearFileA) << 15;
 		// pos 2
-		moves |= (knightPos & clearFileH) << 17;
+		moves |= (knightPos & Mask.clearFileH) << 17;
 		// pos 3
-		moves |= (knightPos & clearFileH & clearFileG) << 10;
+		moves |= (knightPos & Mask.clearFileH & Mask.clearFileG) << 10;
 		// pos 4
-		moves |= (knightPos & clearFileH & clearFileG) >>> 6;
+		moves |= (knightPos & Mask.clearFileH & Mask.clearFileG) >>> 6;
 		// pos 5
-		moves |= (knightPos & clearFileH) >>> 15;
+		moves |= (knightPos & Mask.clearFileH) >>> 15;
 		// pos 6
-		moves |= (knightPos & clearFileA) >>> 17;
+		moves |= (knightPos & Mask.clearFileA) >>> 17;
 		// pos 7
-		moves |= (knightPos & clearFileA & clearFileB) >>> 10;
+		moves |= (knightPos & Mask.clearFileA & Mask.clearFileB) >>> 10;
 		// pos 8
-		moves |= (knightPos & clearFileA & clearFileB) << 6;
+		moves |= (knightPos & Mask.clearFileA & Mask.clearFileB) << 6;
 
 		return moves;
 	}

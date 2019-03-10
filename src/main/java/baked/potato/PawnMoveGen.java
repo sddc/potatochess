@@ -29,7 +29,7 @@ public class PawnMoveGen extends MoveGen {
 						int toSquare = Long.numberOfTrailingZeros(moveBitboard);
 						Move move = new Move(fromSquare, toSquare);
 
-						if ((moveBitboard & maskRank1) != 0 || (moveBitboard & maskRank8) != 0) {
+						if ((moveBitboard & Mask.maskRank1) != 0 || (moveBitboard & Mask.maskRank8) != 0) {
 							for(int i = 0; i < 4; i++) {
 								move = new Move(fromSquare, toSquare);
 								move.move |= Move.PROMOTION_FLAG | (i << 14);
@@ -41,7 +41,7 @@ public class PawnMoveGen extends MoveGen {
 					}
 
 					// double pawn push
-					moveBitboard = (side ? (maskRank3 & moveBitboard) << 8 : (maskRank6 & moveBitboard) >>> 8) & ~b.getAllPieces();
+					moveBitboard = (side ? (Mask.maskRank3 & moveBitboard) << 8 : (Mask.maskRank6 & moveBitboard) >>> 8) & ~b.getAllPieces();
 					if((moveBitboard & movemask) != 0) {
 						int toSquare = Long.numberOfTrailingZeros(moveBitboard);
 						Move move = new Move(fromSquare, toSquare);
@@ -72,7 +72,7 @@ public class PawnMoveGen extends MoveGen {
 				} else {
 					int type = b.getPieceType(toSquare);
 					int score = pieceValues[type] * 100 - pieceValues[sidePiece(side).intValue];
-					if ((moveBitboard & maskRank1) != 0 || (moveBitboard & maskRank8) != 0) {
+					if ((moveBitboard & Mask.maskRank1) != 0 || (moveBitboard & Mask.maskRank8) != 0) {
 						for(int i = 0; i < 4; i++) {
 							move = new Move(fromSquare, toSquare);
 							move.move |= Move.PROMOTION_FLAG | (i << 14);
@@ -118,11 +118,11 @@ public class PawnMoveGen extends MoveGen {
 		// white = true
 		// black = false
 		if(side) {
-			return (((clearFileH & pawnPositions) << 9) |
-					((clearFileA & pawnPositions) << 7));
+			return (((Mask.clearFileH & pawnPositions) << 9) |
+					((Mask.clearFileA & pawnPositions) << 7));
 		} else {
-			return (((clearFileA & pawnPositions) >>> 9) |
-					((clearFileH & pawnPositions) >>> 7));
+			return (((Mask.clearFileA & pawnPositions) >>> 9) |
+					((Mask.clearFileH & pawnPositions) >>> 7));
 		}
 	}
 
@@ -131,7 +131,7 @@ public class PawnMoveGen extends MoveGen {
 		long pawnPos = 1L;
 
 		for(int i = 0; i < 64; i++) {
-			long pawnAttackPos = pawnPos & (clearRank1 | clearRank8);
+			long pawnAttackPos = pawnPos & (Mask.clearRank1 | Mask.clearRank8);
 
 			// white pawn attacks
 			genMoves[0][i] = genPawnAttack(true, pawnAttackPos);
