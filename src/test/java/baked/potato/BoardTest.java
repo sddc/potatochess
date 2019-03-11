@@ -12,7 +12,6 @@ public class BoardTest {
         long expectedPosKey = 0;
         expectedPosKey ^= Zobrist.randSquare[Piece.WHITE_KING.intValue][Square.E1.intValue];
         expectedPosKey ^= Zobrist.randSquare[Piece.BLACK_KING.intValue][Square.E8.intValue];
-        expectedPosKey ^= Zobrist.randCastle[0];
         assertEquals(expectedPosKey, cb.getPositionKey());
 
         cb = Game.parseFen("r3k2r/8/8/8/4P3/8/8/R3K2R b KQkq e3 0 1");
@@ -24,7 +23,7 @@ public class BoardTest {
         expectedPosKey ^= Zobrist.randSquare[Piece.BLACK_KING.intValue][Square.E8.intValue];
         expectedPosKey ^= Zobrist.randSquare[Piece.BLACK_ROOK.intValue][Square.A8.intValue];
         expectedPosKey ^= Zobrist.randSquare[Piece.BLACK_ROOK.intValue][Square.H8.intValue];
-        expectedPosKey ^= Zobrist.randCastle[15];
+        expectedPosKey ^= Zobrist.randCastle[0] ^ Zobrist.randCastle[1] ^ Zobrist.randCastle[2] ^ Zobrist.randCastle[3];
         expectedPosKey ^= Zobrist.randSide;
         assertEquals(expectedPosKey, cb.getPositionKey());
 
@@ -34,7 +33,6 @@ public class BoardTest {
         expectedPosKey ^= Zobrist.randSquare[Piece.WHITE_PAWN.intValue][Square.D5.intValue];
         expectedPosKey ^= Zobrist.randSquare[Piece.BLACK_PAWN.intValue][Square.E5.intValue];
         expectedPosKey ^= Zobrist.randSquare[Piece.BLACK_KING.intValue][Square.E8.intValue];
-        expectedPosKey ^= Zobrist.randCastle[0];
         expectedPosKey ^= Zobrist.randEp[Square.E6.intValue];
         assertEquals(expectedPosKey, cb.getPositionKey());
 

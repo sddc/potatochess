@@ -97,18 +97,10 @@ public class Board {
 			positionKey ^= Zobrist.randEp[epSquare];
 		}
 
-		positionKey ^= Zobrist.randCastle[getCastlePosKey(castleRights)];
-	}
-
-	private int getCastlePosKey(long castleRights) {
-		int castleIdx = 0;
-
-		if((WKS_CASTLE_MASK & castleRights) == 0) castleIdx += 8;
-		if((WQS_CASTLE_MASK & castleRights) == 0) castleIdx += 4;
-		if((BKS_CASTLE_MASK & castleRights) == 0) castleIdx += 2;
-		if((BQS_CASTLE_MASK & castleRights) == 0) castleIdx += 1;
-
-		return castleIdx;
+		if((WKS_CASTLE_MASK & castleRights) == 0) positionKey ^= Zobrist.randCastle[0];
+		if((WQS_CASTLE_MASK & castleRights) == 0) positionKey ^= Zobrist.randCastle[1];
+		if((BKS_CASTLE_MASK & castleRights) == 0) positionKey ^= Zobrist.randCastle[2];
+		if((BQS_CASTLE_MASK & castleRights) == 0) positionKey ^= Zobrist.randCastle[3];
 	}
 
 	public void hideKing(boolean side) {
@@ -344,13 +336,13 @@ public class Board {
 		long toMask = 1L << toSquare;
 
 		// update castle rights
-		int prevCastleIdx = getCastlePosKey(castleRights);
 		castleRights |= fromMask | toMask;
-		int castleIdx = getCastlePosKey(castleRights);
-		if(castleIdx != prevCastleIdx) {
-			positionKey ^= Zobrist.randCastle[prevCastleIdx];
-			positionKey ^= Zobrist.randCastle[castleIdx];
-		}
+		long diff = pm.castleRights ^ castleRights;
+		// check if have not already lost castle right
+		if((WKS_CASTLE_MASK & diff) != 0 && (WKS_CASTLE_MASK & pm.castleRights) == 0) positionKey ^= Zobrist.randCastle[0];
+		if((WQS_CASTLE_MASK & diff) != 0 && (WQS_CASTLE_MASK & pm.castleRights) == 0) positionKey ^= Zobrist.randCastle[1];
+		if((BKS_CASTLE_MASK & diff) != 0 && (BKS_CASTLE_MASK & pm.castleRights) == 0) positionKey ^= Zobrist.randCastle[2];
+		if((BQS_CASTLE_MASK & diff) != 0 && (BQS_CASTLE_MASK & pm.castleRights) == 0) positionKey ^= Zobrist.randCastle[3];
 
 		if(epSquare != Square.NO_SQ.intValue) {
 			// xor out previous position ep square
@@ -647,14 +639,13 @@ public class Board {
 
 		}
 
-		// update castle rights
-		int prevCastleIdx = getCastlePosKey(castleRights);
+		// restore castle rights
+		long diff = pm.castleRights ^ castleRights;
+		if((WKS_CASTLE_MASK & diff) != 0 && (WKS_CASTLE_MASK & pm.castleRights) == 0) positionKey ^= Zobrist.randCastle[0];
+		if((WQS_CASTLE_MASK & diff) != 0 && (WQS_CASTLE_MASK & pm.castleRights) == 0) positionKey ^= Zobrist.randCastle[1];
+		if((BKS_CASTLE_MASK & diff) != 0 && (BKS_CASTLE_MASK & pm.castleRights) == 0) positionKey ^= Zobrist.randCastle[2];
+		if((BQS_CASTLE_MASK & diff) != 0 && (BQS_CASTLE_MASK & pm.castleRights) == 0) positionKey ^= Zobrist.randCastle[3];
 		castleRights = pm.castleRights;
-		int castleIdx = getCastlePosKey(castleRights);
-		if(castleIdx != prevCastleIdx) {
-			positionKey ^= Zobrist.randCastle[prevCastleIdx];
-			positionKey ^= Zobrist.randCastle[castleIdx];
-		}
 
 		if(epSquare != Square.NO_SQ.intValue) {
 			// xor out previous position ep square

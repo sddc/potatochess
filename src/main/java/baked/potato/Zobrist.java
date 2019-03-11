@@ -6,7 +6,7 @@ import java.util.Random;
 
 public class Zobrist {
     public static final long[][] randSquare = new long[12][64];
-    public static final long[] randCastle = new long[16];
+    public static final long[] randCastle = new long[4];
     public static final long randSide;
     public static final long[] randEp = new long[64];
 
@@ -18,7 +18,6 @@ public class Zobrist {
         // castling combinations = 16
         // side
         // 64 ep target squares
-        // 849 total
 
         Random rand = new Random();
         HashSet<Long> randomNums = new HashSet<>();
