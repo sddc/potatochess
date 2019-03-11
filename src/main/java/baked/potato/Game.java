@@ -220,8 +220,7 @@ public class Game {
 		Movelist ml = MoveGen.getMoves(chessboard);
 		for(int mIdx = 0; mIdx < ml.size(); mIdx++) {
 			Move m = ml.moves[mIdx];
-			chessboard.move(m);
-			if(!MoveGen.isKingInCheck(chessboard, !chessboard.getActiveColor())) {
+			if(chessboard.move(m)) {
 				nodes += perft(chessboard, depth-1);
 			}
 			chessboard.undoMove();
@@ -234,7 +233,7 @@ public class Game {
 			return 1;
 		}	
 
-		int Nodes = 0;
+		int nodes = 0;
 		ArrayList<String> results = null;
 		if(initial) {
 			results = new ArrayList<String>();
@@ -243,14 +242,16 @@ public class Game {
 		Movelist ml = MoveGen.getMoves(chessboard);
 		for(int mIdx = 0; mIdx < ml.size(); mIdx++) {
 			Move m = ml.moves[mIdx];
-			chessboard.move(m);
-			Nodes += perft(chessboard, depth-1);
-			chessboard.undoMove();
+			if(chessboard.move(m)) {
+				nodes += divide(chessboard, depth - 1, false);
 
-			if(initial) {
-				results.add(new String(m.toString() + " " + Nodes));
-				Nodes = 0;
+				if(initial) {
+					results.add(new String(m.toString() + " " + nodes));
+					nodes = 0;
+				}
 			}
+
+			chessboard.undoMove();
 		}
 
 		if(initial) {
@@ -259,7 +260,7 @@ public class Game {
 				System.out.println(r);
 			}
 		}
-		return Nodes;
+		return nodes;
 	}
 
 	public static Board parseFen(String position) {

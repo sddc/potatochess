@@ -14,18 +14,25 @@ public class PawnMoveGen extends MoveGen {
 	}
 
 	@Override
-	public void generateMoves(Board b, Movelist ml, boolean captureMovesOnly, boolean kingInCheck, long movemask) {
+	public void generateMoves(Board b, Movelist ml, boolean captureMovesOnly, boolean kingInCheck, long movemask, long pinned) {
 		boolean side = b.getActiveColor();
 
 		for(long fromBB = b.getPawnBitboard(side); fromBB != 0; fromBB &= fromBB - 1) {
 			int fromSquare = Long.numberOfTrailingZeros(fromBB);
+			long fromMask = Long.lowestOneBit(fromBB);
 			long moveBitboard;
+			long pinnedMovemask = -1;
+
+
+			if((pinned & fromMask) != 0) {
+				pinnedMovemask = getPinnedMovemask(b, fromSquare);
+			}
 
 			if(!captureMovesOnly) {
 				// pawn push
 				moveBitboard = 1L << (fromSquare + (side ? 8 : -8)) & ~b.getAllPieces();
 				if(moveBitboard != 0) {
-					if((moveBitboard & movemask) != 0) {
+					if((moveBitboard & movemask & pinnedMovemask) != 0) {
 						int toSquare = Long.numberOfTrailingZeros(moveBitboard);
 						Move move = new Move(fromSquare, toSquare);
 
@@ -42,7 +49,7 @@ public class PawnMoveGen extends MoveGen {
 
 					// double pawn push
 					moveBitboard = (side ? (Mask.maskRank3 & moveBitboard) << 8 : (Mask.maskRank6 & moveBitboard) >>> 8) & ~b.getAllPieces();
-					if((moveBitboard & movemask) != 0) {
+					if((moveBitboard & movemask & pinnedMovemask) != 0) {
 						int toSquare = Long.numberOfTrailingZeros(moveBitboard);
 						Move move = new Move(fromSquare, toSquare);
 						ml.addMove(move);
@@ -59,7 +66,7 @@ public class PawnMoveGen extends MoveGen {
 				opponentPieces |= epMask;
 			}
 
-			moveBitboard = opponentPieces & pawnAttackMoves[side ? 0 : 1][fromSquare] & movemask;
+			moveBitboard = opponentPieces & (pawnAttackMoves[side ? 0 : 1][fromSquare] & movemask & pinnedMovemask);
 			for(long toBB = moveBitboard; toBB != 0; toBB &= toBB - 1) {
 				int toSquare = Long.numberOfTrailingZeros(toBB);
 				Move move = new Move(fromSquare, toSquare);

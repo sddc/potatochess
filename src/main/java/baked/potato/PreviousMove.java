@@ -8,7 +8,6 @@ public class PreviousMove {
 	int fiftyMove;
 	int fullMove;
 	long positionKey;
-	int material;
 
 	public PreviousMove(Move move, long castleRights, int epSquare, int fiftyMove, int fullMove, long positionKey) {
 		this.move = move;

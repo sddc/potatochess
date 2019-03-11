@@ -332,10 +332,9 @@ public class Board {
 		}
 	}
 
-	public void move(Move m) {
+	public boolean move(Move m) {
 		// save board state to undo move
 		PreviousMove pm = new PreviousMove(m, castleRights, epSquare, fiftyMove++, fullMove, positionKey);
-		pm.material = Evaluation.materialScore(this);
 
 		int fromSquare = m.move & Move.SQUARE_MASK;
 		int fromPiece = pieceBoard[fromSquare];
@@ -512,6 +511,14 @@ public class Board {
 		ply++;
 		activeColor = !activeColor;
 		positionKey ^= Zobrist.randSide;
+
+		if(fromPiece == Piece.WHITE_KING.intValue || fromPiece == Piece.BLACK_KING.intValue || (m.move & Move.FLAG_MASK) == Move.EP_FLAG) {
+			if(MoveGen.isKingInCheck(this, !this.getActiveColor())) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	public void undoMove() {
@@ -661,7 +668,6 @@ public class Board {
 			positionKey ^= Zobrist.randEp[epSquare];
 		}
 
-		assert pm.material == Evaluation.materialScore(this);
 		assert pm.positionKey == positionKey;
 
 	}

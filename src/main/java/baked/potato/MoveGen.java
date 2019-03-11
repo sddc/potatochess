@@ -4,47 +4,6 @@ public abstract class MoveGen {
 	// wp, wr, wn, wb, wq, wk, bp, br, bn, bb, bq, bk
 	protected static final int[] pieceValues = {1, 5, 3, 3, 9, 20, 1, 5, 3, 3, 9, 20};
 
-	public static long getBetweenMask(int kingSq, int attackerSq) {
-		int kingSqRank = kingSq / 8;
-		int kingSqFile = kingSq % 8;
-		int attackerSqRank = attackerSq / 8;
-		int attackerSqFile = attackerSq % 8;
-		long betweenMask = 0;
-		int shift = 0;
-
-		if(attackerSqRank > kingSqRank) {
-			if(attackerSqFile < kingSqFile) {
-				shift = 7;
-			} else if(attackerSqFile > kingSqFile) {
-				shift = 9;
-			} else {
-				shift = 8;
-			}
-		} else if(attackerSqRank < kingSqRank) {
-			if(attackerSqFile < kingSqFile) {
-				shift = -9;
-			} else if(attackerSqFile > kingSqFile) {
-				shift = -7;
-			} else {
-				shift = -8;
-			}
-		} else {
-			shift = attackerSqFile < kingSqFile ? -1 : 1;
-		}
-
-		long kingBB = 1L << kingSq;
-		long attackerBB = 1L << attackerSq;
-
-		kingBB = shift < 0 ? kingBB >>> Math.abs(shift) : kingBB << shift;
-
-		while(kingBB != attackerBB) {
-			betweenMask |= kingBB;
-			kingBB = shift < 0 ? kingBB >>> Math.abs(shift) : kingBB << shift;
-		}
-
-		return betweenMask;
-	}
-
 	protected static MoveGen[] moveGens = {
 	       PawnMoveGen.getInstance(),	
 	       RookMoveGen.getInstance(),	
@@ -59,7 +18,6 @@ public abstract class MoveGen {
 
 		int kingSquare = Long.numberOfTrailingZeros(b.getKingBitboard(b.getActiveColor()));
 		long kingAttackers = 0;
-		long pinned = moveGens[4].genMoveBitboard(b, kingSquare) & b.getSidePieces(b.getActiveColor());
 
 		for(MoveGen mg : moveGens) {
 			if(mg instanceof KingMoveGen) continue;
@@ -80,19 +38,19 @@ public abstract class MoveGen {
 					attackerPieceType == Piece.BLACK_BISHOP ||
 					attackerPieceType == Piece.BLACK_QUEEN
 			) {
-				movemask |= getBetweenMask(kingSquare, attackerSquare);
+				movemask |= Mask.between(kingSquare, attackerSquare);
 			}
 
 			for (MoveGen mg : moveGens) {
-				mg.generateMoves(b, ml, false, true, movemask);
+				mg.generateMoves(b, ml, false, true, movemask, getPinnedPieces(b, kingSquare));
 			}
 		} else if(numAttackers == 2) {
 			// generate only king moves
-			moveGens[5].generateMoves(b, ml, false, true, -1);
+			moveGens[5].generateMoves(b, ml, false, true, -1, 0);
 		} else {
 			// generate moves normally
 			for (MoveGen mg : moveGens) {
-				mg.generateMoves(b, ml, false, false, -1);
+				mg.generateMoves(b, ml, false, false, -1, getPinnedPieces(b, kingSquare));
 			}
 		}
 
@@ -126,12 +84,18 @@ public abstract class MoveGen {
 		return squares & ~b.getSidePieces(side);
 	}
 
-	public void generateMoves(Board b, Movelist ml, boolean captureMovesOnly, boolean kingInCheck, long movemask) {
+	public void generateMoves(Board b, Movelist ml, boolean captureMovesOnly, boolean kingInCheck, long movemask, long pinned) {
 		boolean side = b.getActiveColor();
 
 		for(long fromBB = b.getPieceBitboard(sidePiece(side)); fromBB != 0; fromBB &= fromBB - 1) {
 			int fromSquare = Long.numberOfTrailingZeros(fromBB);
+			long fromMask = Long.lowestOneBit(fromBB);
+
 			long moveBitboard = genMoveBitboard(b, fromSquare) & ~b.getSidePieces(side) & movemask;
+
+			if((pinned & fromMask) != 0) {
+				moveBitboard &= getPinnedMovemask(b, fromSquare);
+			}
 
 			if (captureMovesOnly) {
 				moveBitboard &= b.getSidePieces(!side);
@@ -204,5 +168,56 @@ public abstract class MoveGen {
 				}
 			}
 		}
+	}
+
+	public static long getPinnedPieces(Board b, int kingSquare) {
+		long pinned = 0;
+		long allPieces = b.getAllPieces();
+		boolean side = b.getActiveColor();
+
+		// find pinned pieces between rook or queen
+		long potPinned = Magic.getRookMoves(kingSquare, allPieces) & b.getSidePieces(side);
+		long pinners = Magic.getRookMoves(kingSquare, allPieces ^ potPinned);
+		pinners &= b.getRookBitboard(!side) | b.getQueenBitboard(!side);
+		while(pinners != 0) {
+			int pinnerSq = Long.numberOfTrailingZeros(pinners);
+			pinned |= potPinned & Mask.between(pinnerSq, kingSquare);
+			pinners &= pinners - 1;
+		}
+
+		// find pinned pieces between bishop or queen
+		potPinned = Magic.getBishopMoves(kingSquare, allPieces) & b.getSidePieces(side);
+		pinners = Magic.getBishopMoves(kingSquare, allPieces ^ potPinned);
+		pinners &= b.getBishopBitboard(!side) | b.getQueenBitboard(!side);
+		while(pinners != 0) {
+			int pinnerSq = Long.numberOfTrailingZeros(pinners);
+			pinned |= potPinned & Mask.between(pinnerSq, kingSquare);
+			pinners &= pinners - 1;
+		}
+
+		return pinned;
+	}
+
+	public static long getPinnedMovemask(Board b, int pinnedSq) {
+		boolean side = b.getActiveColor();
+		long pinnedSqMask = 1L << pinnedSq;
+		int kingSq = Long.numberOfTrailingZeros(b.getKingBitboard(side));
+		long allPieces = b.getAllPieces() ^ pinnedSqMask;
+		long pinner = Magic.getRookMoves(kingSq, allPieces) | Magic.getBishopMoves(kingSq, allPieces);
+		pinner &= (b.getRookBitboard(!side) | b.getBishopBitboard(!side) | b.getQueenBitboard(!side));
+
+		// find correct pinner
+		while(pinner != 0) {
+			int pinnerSq = Long.numberOfTrailingZeros(pinner);
+			long betweenMask = Mask.between(kingSq, pinnerSq);
+
+			if((pinnedSqMask & betweenMask) != 0) {
+				return Long.lowestOneBit(pinner) | betweenMask;
+			}
+
+			pinner &= pinner - 1;
+		}
+
+		return 0;
 	}
 }

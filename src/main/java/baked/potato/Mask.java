@@ -102,4 +102,37 @@ public class Mask {
         }
 
     }
+
+    public static long between(int sq1, int sq2) {
+        if(sq1 == sq2) return 0;
+        long sq1Mask = 1L << sq1;
+        long sq2Mask = 1L << sq2;
+        long squares = sq1Mask | sq2Mask;
+        long mask = 0;
+
+        if((Mask.rank[Mask.rankIdx[sq1]] & squares) == squares) {
+            mask = Mask.rank[Mask.rankIdx[sq1]];
+        }
+
+        if((Mask.file[Mask.fileIdx[sq1]] & squares) == squares) {
+            mask = Mask.file[Mask.fileIdx[sq1]];
+        }
+
+        if((Mask.diag[Mask.diagIdx[sq1]] & squares) == squares) {
+            mask = Mask.diag[Mask.diagIdx[sq1]];
+        }
+
+        if((Mask.antiDiag[Mask.antiDiagIdx[sq1]] & squares) == squares) {
+            mask = Mask.antiDiag[Mask.antiDiagIdx[sq1]];
+        }
+
+        if(mask == 0) return 0;
+        if(sq1 > sq2) {
+            mask &= (sq1Mask - sq2Mask) ^ sq2Mask;
+        } else {
+            mask &= (sq2Mask - sq1Mask) ^ sq1Mask;
+        }
+
+        return mask;
+    }
 }
