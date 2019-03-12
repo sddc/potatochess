@@ -1,6 +1,5 @@
 package baked.potato;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 
 public class Search implements Runnable {
@@ -56,7 +55,7 @@ public class Search implements Runnable {
         for(int i = 0; i < depth && ttEntry != null; i++) {
             Move m = new Move(ttEntry.bestMove);
 
-            Movelist ml = MoveGen.getMoves(b);
+            Movelist ml = MoveGen.getMoves(b, false);
             if(Arrays.asList(ml.moves).contains(m)) {
                 b.move(m);
                 result += result.length() > 0 ? " " + m.toString() : m.toString();
@@ -73,10 +72,50 @@ public class Search implements Runnable {
         return result;
     }
 
+    private int quiescence(Board b, int alpha, int beta, boolean side) {
+        if(!infinite && (System.nanoTime() >= stopTime)) {
+            stop = true;
+            return 0;
+        }
+        nodes++;
+
+        int standPat = Evaluation.score(b) * (side ? 1 : -1);
+        if(standPat >= beta) return beta;
+        if(alpha < standPat) alpha = standPat;
+
+        Movelist ml = MoveGen.getMoves(b, true);
+        MoveGen.sortMoves(ml, null);
+
+        int eval = -INFINITY;
+        for(int mIdx = 0; mIdx < ml.size(); mIdx++) {
+            Move m = ml.moves[mIdx];
+
+            if(b.move(m)) {
+                eval = Math.max(eval, -quiescence(b, -beta, -alpha, !side));
+            }
+            b.undoMove();
+            if(stop) return 0;
+
+            if(eval > alpha) {
+                alpha = eval;
+
+                if(alpha >= beta) {
+                    return beta;
+                }
+            }
+        }
+
+        return alpha;
+    }
+
     private int negamax(Board b, int depth, int alpha, int beta, boolean side) {
         if(!infinite && (System.nanoTime() >= stopTime)) {
             stop = true;
             return 0;
+        }
+
+        if(depth == 0) {
+            return quiescence(b, alpha, beta, side);
         }
 
         int oldAlpha = alpha;
@@ -111,13 +150,7 @@ public class Search implements Runnable {
             }
         }
 
-        int color = side ? 1 : -1;
-
-        if(depth == 0) {
-            return Evaluation.score(b) * color;
-        }
-
-        Movelist ml = MoveGen.getMoves(b);
+        Movelist ml = MoveGen.getMoves(b, false);
         MoveGen.sortMoves(ml, pvMove);
         Move bestMove = null;
         int legalMoves = 0;
@@ -125,9 +158,8 @@ public class Search implements Runnable {
         for(int mIdx = 0; mIdx < ml.size(); mIdx++) {
             Move m = ml.moves[mIdx];
 
-            b.move(m);
-            if(!MoveGen.isKingInCheck(b, side)) {
-                eval = -negamax(b, depth - 1, -beta, -alpha, !side);
+            if(b.move(m)) {
+                eval = Math.max(eval, -negamax(b, depth - 1, -beta, -alpha, !side));
                 legalMoves++;
             }
             b.undoMove();

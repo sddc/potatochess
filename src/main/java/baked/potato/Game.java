@@ -55,7 +55,7 @@ public class Game {
 					}
 
 					for(int i = moveskip; i < command.length; i++) {
-						Movelist ml = MoveGen.getMoves(chessboard);
+						Movelist ml = MoveGen.getMoves(chessboard, false);
 						for(int mIdx = 0; mIdx < ml.size(); mIdx++) {
 							Move m = ml.moves[mIdx];
 
@@ -138,6 +138,17 @@ public class Game {
 
 					break;
 				case "moves":
+					Movelist ml = MoveGen.getMoves(chessboard, false);
+					for(int i = 0; i < ml.size(); i++) {
+						Move m = ml.moves[i];
+
+						if(chessboard.move(m)) {
+							System.out.println(m);
+						}
+
+						chessboard.undoMove();
+					}
+
 					break;
 				case "print":
 					chessboard.print();
@@ -147,7 +158,7 @@ public class Game {
 						if(command[1].length() == 4 || command[1].length() == 5) {
 							boolean foundMove = false;
 
-							Movelist ml = MoveGen.getMoves(chessboard);
+							ml = MoveGen.getMoves(chessboard, false);
 							for(int mIdx = 0; mIdx < ml.size(); mIdx++) {
 								Move m = ml.moves[mIdx];
 
@@ -217,7 +228,7 @@ public class Game {
 
 		int nodes = 0;
 
-		Movelist ml = MoveGen.getMoves(chessboard);
+		Movelist ml = MoveGen.getMoves(chessboard, true);
 		for(int mIdx = 0; mIdx < ml.size(); mIdx++) {
 			Move m = ml.moves[mIdx];
 			if(chessboard.move(m)) {
@@ -239,7 +250,7 @@ public class Game {
 			results = new ArrayList<String>();
 		}
 
-		Movelist ml = MoveGen.getMoves(chessboard);
+		Movelist ml = MoveGen.getMoves(chessboard, false);
 		for(int mIdx = 0; mIdx < ml.size(); mIdx++) {
 			Move m = ml.moves[mIdx];
 			if(chessboard.move(m)) {

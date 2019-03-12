@@ -13,7 +13,7 @@ public abstract class MoveGen {
 	       KingMoveGen.getInstance()
 	};
 
-	public static Movelist getMoves(Board b) {
+	public static Movelist getMoves(Board b, boolean captureMovesOnly) {
 		Movelist ml = new Movelist();
 
 		int kingSquare = Long.numberOfTrailingZeros(b.getKingBitboard(b.getActiveColor()));
@@ -42,15 +42,15 @@ public abstract class MoveGen {
 			}
 
 			for (MoveGen mg : moveGens) {
-				mg.generateMoves(b, ml, false, true, movemask, getPinnedPieces(b, kingSquare));
+				mg.generateMoves(b, ml, captureMovesOnly, true, movemask, getPinnedPieces(b, kingSquare));
 			}
 		} else if(numAttackers == 2) {
 			// generate only king moves
-			moveGens[5].generateMoves(b, ml, false, true, -1, 0);
+			moveGens[5].generateMoves(b, ml, captureMovesOnly, true, -1, 0);
 		} else {
 			// generate moves normally
 			for (MoveGen mg : moveGens) {
-				mg.generateMoves(b, ml, false, false, -1, getPinnedPieces(b, kingSquare));
+				mg.generateMoves(b, ml, captureMovesOnly, false, -1, getPinnedPieces(b, kingSquare));
 			}
 		}
 
