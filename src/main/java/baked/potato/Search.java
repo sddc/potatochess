@@ -85,6 +85,11 @@ public class Search implements Runnable {
         nodes++;
 
         int standPat = Evaluation.score(b);
+
+        if(b.repetition() || b.getFiftyMove() >= 100) {
+            standPat = Math.max(standPat, 0);
+        }
+
         if(standPat >= beta) return beta;
         if(alpha < standPat) alpha = standPat;
 
@@ -122,8 +127,13 @@ public class Search implements Runnable {
             return quiescence(b, alpha, beta);
         }
 
-        int oldAlpha = alpha;
         nodes++;
+
+        if(b.repetition() || b.getFiftyMove() >= 100) {
+            alpha = Math.max(alpha, 0);
+        }
+
+        int oldAlpha = alpha;
 
         Move pvMove = null;
         TTEntry ttEntry = b.tt.get(b.getPositionKey());
@@ -192,10 +202,10 @@ public class Search implements Runnable {
         }
 
         int flag;
-        if(alpha <= oldAlpha) {
+        if(maxEval <= oldAlpha) {
             // upperbound
             flag = TTEntry.flagAllNode;
-        } else if(alpha >= beta) {
+        } else if(maxEval >= beta) {
             // lowerbound
             flag = TTEntry.flagCutNode;
         } else {

@@ -1,8 +1,6 @@
 package baked.potato;
 
-import java.util.Arrays;
-import java.util.Deque;
-import java.util.ArrayDeque;
+import java.util.*;
 
 public class Board {
 	public static final boolean WHITE = true;
@@ -23,6 +21,11 @@ public class Board {
 	private boolean activeColor;
 
 	private int epSquare = Square.NO_SQ.intValue;
+
+	public int getFiftyMove() {
+		return fiftyMove;
+	}
+
 	private int fiftyMove;
 	private int fullMove;
 
@@ -42,7 +45,7 @@ public class Board {
     private int ply = 0;
     private long kingStorage = 0;
 	
-	private Deque<PreviousMove> previousMoves = new ArrayDeque<PreviousMove>();
+	private List<PreviousMove> previousMoves = new ArrayList<>();
 
 	public static final TT tt = new TT(64);
 
@@ -493,7 +496,7 @@ public class Board {
 		}
 
 		// store previous move
-		previousMoves.addFirst(pm);
+		previousMoves.add(pm);
 
 		if(!activeColor) {
 			// black to white
@@ -518,7 +521,7 @@ public class Board {
 			throw new UnsupportedOperationException("no previous moves");
 		}
 
-		PreviousMove pm = previousMoves.removeFirst();
+		PreviousMove pm = previousMoves.remove(previousMoves.size() - 1);
 
 		positionKey ^= Zobrist.randSide;
 		activeColor = !activeColor;
@@ -707,5 +710,16 @@ public class Board {
 
 	public int getPly() {
 		return ply;
+	}
+
+	public boolean repetition() {
+		int repStart = ply - fiftyMove;
+		for(int i = repStart < 0 ? 0 : repStart; i < previousMoves.size(); i += 2) {
+			if(previousMoves.get(i).positionKey == positionKey) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 }
