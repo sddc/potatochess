@@ -505,7 +505,7 @@ public class Board {
 		positionKey ^= Zobrist.randSide;
 
 		if(fromPiece == Piece.WHITE_KING.intValue || fromPiece == Piece.BLACK_KING.intValue || (m.move & Move.FLAG_MASK) == Move.EP_FLAG) {
-			if(MoveGen.isKingInCheck(this, !this.getActiveColor())) {
+			if(MoveGen.isKingInCheck(this, !this.activeColor)) {
 				return false;
 			}
 		}

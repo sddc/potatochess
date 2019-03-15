@@ -228,7 +228,7 @@ public class Game {
 
 		int nodes = 0;
 
-		Movelist ml = MoveGen.getMoves(chessboard, true);
+		Movelist ml = MoveGen.getMoves(chessboard, false);
 		for(int mIdx = 0; mIdx < ml.size(); mIdx++) {
 			Move m = ml.moves[mIdx];
 			if(chessboard.move(m)) {

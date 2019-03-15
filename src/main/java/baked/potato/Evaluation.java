@@ -96,7 +96,12 @@ public class Evaluation {
         int sum = 0;
 
         sum += materialScore(b);
-        sum += positionalScore(b); 
+        sum += positionalScore(b);
+
+        if(!b.getActiveColor()) {
+            // black
+            sum = -sum;
+        }
 
         return sum;
     }

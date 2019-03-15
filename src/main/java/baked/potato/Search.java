@@ -29,14 +29,14 @@ public class Search implements Runnable {
         stop = true;
     }
 
-    public void search(Board b, int depth, boolean side) {
+    public void search(Board b, int depth) {
         b.tt.incAge();
 
         Move bestMove = null;
         for(int d = 1; d <= depth; d++) {
             nodes = 0;
             long start = System.nanoTime();
-            int bestScore = negamax(b, d, -INFINITY, INFINITY, side);
+            int bestScore = negamax(b, d, -INFINITY, INFINITY);
             if(stop) break;
             double elapsed = (System.nanoTime() - start) * 1e-6;
             double nps = nodes / (elapsed * 1e-3);
@@ -72,50 +72,54 @@ public class Search implements Runnable {
         return result;
     }
 
-    private int quiescence(Board b, int alpha, int beta, boolean side) {
+    private int quiescence(Board b, int alpha, int beta) {
         if(!infinite && (System.nanoTime() >= stopTime)) {
             stop = true;
             return 0;
         }
+
+        if(MoveGen.isKingInCheck(b, b.getActiveColor())) {
+            return negamax(b, 1, alpha, beta);
+        }
+
         nodes++;
 
-        int standPat = Evaluation.score(b) * (side ? 1 : -1);
+        int standPat = Evaluation.score(b);
         if(standPat >= beta) return beta;
         if(alpha < standPat) alpha = standPat;
 
         Movelist ml = MoveGen.getMoves(b, true);
         MoveGen.sortMoves(ml, null);
 
-        int eval = -INFINITY;
         for(int mIdx = 0; mIdx < ml.size(); mIdx++) {
             Move m = ml.moves[mIdx];
 
             if(b.move(m)) {
-                eval = Math.max(eval, -quiescence(b, -beta, -alpha, !side));
+                int eval = -quiescence(b, -beta, -alpha);
+
+                if(eval > alpha) {
+                    alpha = eval;
+                }
             }
             b.undoMove();
             if(stop) return 0;
 
-            if(eval > alpha) {
-                alpha = eval;
-
-                if(alpha >= beta) {
-                    return beta;
-                }
+            if(alpha >= beta) {
+                return beta;
             }
         }
 
         return alpha;
     }
 
-    private int negamax(Board b, int depth, int alpha, int beta, boolean side) {
+    private int negamax(Board b, int depth, int alpha, int beta) {
         if(!infinite && (System.nanoTime() >= stopTime)) {
             stop = true;
             return 0;
         }
 
         if(depth == 0) {
-            return quiescence(b, alpha, beta, side);
+            return quiescence(b, alpha, beta);
         }
 
         int oldAlpha = alpha;
@@ -154,29 +158,33 @@ public class Search implements Runnable {
         MoveGen.sortMoves(ml, pvMove);
         Move bestMove = null;
         int legalMoves = 0;
-        int eval = -INFINITY;
+        int maxEval = -INFINITY;
         for(int mIdx = 0; mIdx < ml.size(); mIdx++) {
             Move m = ml.moves[mIdx];
 
             if(b.move(m)) {
-                eval = Math.max(eval, -negamax(b, depth - 1, -beta, -alpha, !side));
                 legalMoves++;
+                int eval = -negamax(b, depth - 1, -beta, -alpha);
+
+                if(eval > maxEval) {
+                    maxEval = eval;
+                    bestMove = m;
+
+                    if(maxEval > alpha) {
+                        alpha = maxEval;
+                    }
+                }
             }
             b.undoMove();
             if(stop) return 0;
 
-            if(eval > alpha) {
-                alpha = eval;
-                bestMove = m;
-
-                if(alpha >= beta) {
-                    break;
-                }
+            if(alpha >= beta) {
+                break;
             }
         }
 
         if(legalMoves == 0) {
-            if(MoveGen.isKingInCheck(b, side)) {
+            if(MoveGen.isKingInCheck(b, b.getActiveColor())) {
                 return -MATE + b.getPly();
             } else {
                 return 0;
@@ -202,12 +210,12 @@ public class Search implements Runnable {
             b.tt.put(b.getPositionKey(), bestMove != null ? bestMove.move : 0, alpha, depth, flag);
         }
 
-        return alpha;
+        return maxEval;
     }
 
     @Override
     public void run() {
         stopTime = System.nanoTime() + stopTime;
-        search(b, depth, b.getActiveColor());
+        search(b, depth);
     }
 }
