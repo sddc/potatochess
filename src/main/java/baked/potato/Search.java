@@ -43,7 +43,7 @@ public class Search implements Runnable {
             double nps = nodes / (elapsed * 1e-3);
 
             System.out.printf("info depth %d score cp %d time %.0f nodes %d nps %.0f pv %s\n", d, bestScore, elapsed, nodes, nps, pv(b, d));
-            bestMove = new Move(b.tt.get(b.getPositionKey()).bestMove);
+            bestMove = b.tt.get(b.getPositionKey()).bestMove;
         }
 
         System.out.println("bestmove " + bestMove);
@@ -54,7 +54,7 @@ public class Search implements Runnable {
         String result = "";
         int initialPly = b.getPly();
         for(int i = 0; i < depth && ttEntry != null; i++) {
-            Move m = new Move(ttEntry.bestMove);
+            Move m = ttEntry.bestMove;
 
             Movelist ml = MoveGen.getMoves(b, false);
             if(Arrays.asList(ml.moves).contains(m)) {
@@ -139,11 +139,7 @@ public class Search implements Runnable {
         TTEntry ttEntry = b.tt.get(b.getPositionKey());
         if(ttEntry != null) {
             if(ttEntry.depth >= depth) {
-                int score = ttEntry.score;
-
-                if (Math.abs(score) >= MAX_MATE) {
-                    score = score < 0 ? score + b.getPly() : score - b.getPly();
-                }
+                int score = mateScore(ttEntry.score, b.getPly(), false);
 
                 if ((ttEntry.flag & TTEntry.flagPvNode) != 0) {
                     // exact
@@ -160,7 +156,7 @@ public class Search implements Runnable {
                     return score;
                 }
             } else if((ttEntry.flag & TTEntry.flagPvNode) != 0) {
-                pvMove = new Move(ttEntry.bestMove);
+                pvMove = ttEntry.bestMove;
             }
         }
 
@@ -213,14 +209,21 @@ public class Search implements Runnable {
             flag = TTEntry.flagPvNode;
         }
 
-        if(Math.abs(alpha) >= MAX_MATE) {
-            int rel_alpha = maxEval < 0 ? maxEval - b.getPly() : maxEval + b.getPly();
-            b.tt.put(b.getPositionKey(), bestMove != null ? bestMove.move : 0, rel_alpha, depth, flag);
-        } else {
-            b.tt.put(b.getPositionKey(), bestMove != null ? bestMove.move : 0, maxEval, depth, flag);
-        }
+        b.tt.put(b.getPositionKey(), bestMove, mateScore(maxEval, b.getPly(), true), depth, flag);
 
         return maxEval;
+    }
+
+    private static int mateScore(int score, int ply, boolean absToRel) {
+        if (Math.abs(score) >= MAX_MATE) {
+            if (absToRel) {
+                return score < 0 ? score - ply : score + ply;
+            } else {
+                return score < 0 ? score + ply : score - ply;
+            }
+        }
+
+        return score;
     }
 
     @Override

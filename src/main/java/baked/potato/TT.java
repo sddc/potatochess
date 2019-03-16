@@ -9,10 +9,10 @@ public class TT {
     }
 
     public void resize(int sizeInMb) {
-        // TTEntry size 35 bytes
+        // TTEntry size 63 bytes
 
         if(sizeInMb <= 0) sizeInMb = 1;
-        entries = new TTEntry[sizeInMb * 1000000 / 35];
+        entries = new TTEntry[sizeInMb * 1_000_000 / 63];
 
         for(int i = 0; i < entries.length; i++) {
             entries[i] = new TTEntry();
@@ -26,10 +26,10 @@ public class TT {
     }
 
     public void incAge() {
-        if(++age == 16) age = 0;
+        age++;
     }
 
-    public void put(long positionKey, int bestMove, int score, int depth, int flag) {
+    public void put(long positionKey, Move bestMove, int score, int depth, int flag) {
         int i = (int)(positionKey % entries.length);
 
         if(entries[i].flag == 0 || entries[i].age != age || entries[i].depth <= depth) {
@@ -38,7 +38,7 @@ public class TT {
             entries[i].score = score;
             entries[i].depth = (byte)depth;
             entries[i].age = age;
-            entries[i].flag = (byte)(flag | TTEntry.flagOccupied);
+            entries[i].flag = (byte)flag;
         }
     }
 
