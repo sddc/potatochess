@@ -57,39 +57,39 @@ public class PawnMoveGen extends MoveGen {
 				}
 			}
 
+			// en passant
+			if(b.getEpSquare() != Square.NO_SQ.intValue) {
+				moveBitboard = pawnAttackMoves[!side ? 0 : 1][b.getEpSquare()] & fromMask;
+
+				if(moveBitboard != 0) {
+					Move move = new Move(fromSquare, b.getEpSquare());
+					move.move |= Move.EP_FLAG;
+					move.score = 99;
+
+					ml.addMove(move);
+				}
+			}
+
 			// pawn attack
 			long opponentPieces = b.getSidePieces(!side);
-
-			long epMask = 0;
-			if(b.getEpSquare() != Square.NO_SQ.intValue) {
-				epMask = 1L << b.getEpSquare();
-				opponentPieces |= epMask;
-			}
 
 			moveBitboard = opponentPieces & (pawnAttackMoves[side ? 0 : 1][fromSquare] & movemask & pinnedMovemask);
 			for(long toBB = moveBitboard; toBB != 0; toBB &= toBB - 1) {
 				int toSquare = Long.numberOfTrailingZeros(toBB);
 				Move move = new Move(fromSquare, toSquare);
 
-				if((epMask & (toBB & -toBB)) != 0) {
-					move.move |= Move.EP_FLAG;
-					move.score = 99;
-
-					ml.addMove(move);
-				} else {
-					int type = b.getPieceType(toSquare);
-					int score = pieceValues[type] * 100 - pieceValues[sidePiece(side).intValue];
-					if ((moveBitboard & Mask.maskRank1) != 0 || (moveBitboard & Mask.maskRank8) != 0) {
-						for(int i = 0; i < 4; i++) {
-							move = new Move(fromSquare, toSquare);
-							move.move |= Move.PROMOTION_FLAG | (i << 14);
-							move.score = score;
-							ml.addMove(move);
-						}
-					} else {
+				int type = b.getPieceType(toSquare);
+				int score = pieceValues[type] * 100 - pieceValues[sidePiece(side).intValue];
+				if ((moveBitboard & Mask.maskRank1) != 0 || (moveBitboard & Mask.maskRank8) != 0) {
+					for(int i = 0; i < 4; i++) {
+						move = new Move(fromSquare, toSquare);
+						move.move |= Move.PROMOTION_FLAG | (i << 14);
 						move.score = score;
 						ml.addMove(move);
 					}
+				} else {
+					move.score = score;
+					ml.addMove(move);
 				}
 
 			}

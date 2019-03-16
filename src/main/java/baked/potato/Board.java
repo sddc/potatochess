@@ -77,7 +77,6 @@ public class Board {
 
 		initPieceBoard();
 		positionKeyInit();
-        ply = 0;
 	}
 
 	private void positionKeyInit() {
@@ -711,9 +710,10 @@ public class Board {
 	public int getPly() {
 		return ply;
 	}
+	public void resetPly() { ply = 0; };
 
 	public boolean repetition() {
-		int repStart = ply - fiftyMove;
+		int repStart = previousMoves.size() - fiftyMove;
 		for(int i = repStart < 0 ? 0 : repStart; i < previousMoves.size(); i += 2) {
 			if(previousMoves.get(i).positionKey == positionKey) {
 				return true;

@@ -6,7 +6,7 @@ public class Search implements Runnable {
     public static final int INFINITY = 1000000;
     public static final int MAX_PLY = 64;
     public static final int MATE = 30000;
-    public static final int MAX_MATE = MATE - MAX_PLY;
+    public static final int MAX_MATE = MATE - MAX_PLY * 2;
     private int nodes = 0;
     private volatile boolean stop = false;
     private Board b;
@@ -30,6 +30,7 @@ public class Search implements Runnable {
     }
 
     public void search(Board b, int depth) {
+        b.resetPly();
         b.tt.incAge();
 
         Move bestMove = null;
@@ -84,12 +85,11 @@ public class Search implements Runnable {
 
         nodes++;
 
-        int standPat = Evaluation.score(b);
-
         if(b.repetition() || b.getFiftyMove() >= 100) {
-            standPat = Math.max(standPat, 0);
+            return 0;
         }
 
+        int standPat = Evaluation.score(b);
         if(standPat >= beta) return beta;
         if(alpha < standPat) alpha = standPat;
 
@@ -129,8 +129,8 @@ public class Search implements Runnable {
 
         nodes++;
 
-        if(b.repetition() || b.getFiftyMove() >= 100) {
-            alpha = Math.max(alpha, 0);
+        if(b.getPly() > 0 && (b.repetition() || b.getFiftyMove() >= 100)) {
+            return 0;
         }
 
         int oldAlpha = alpha;
@@ -214,10 +214,10 @@ public class Search implements Runnable {
         }
 
         if(Math.abs(alpha) >= MAX_MATE) {
-            int rel_alpha = alpha < 0 ? alpha - b.getPly() : alpha + b.getPly();
+            int rel_alpha = maxEval < 0 ? maxEval - b.getPly() : maxEval + b.getPly();
             b.tt.put(b.getPositionKey(), bestMove != null ? bestMove.move : 0, rel_alpha, depth, flag);
         } else {
-            b.tt.put(b.getPositionKey(), bestMove != null ? bestMove.move : 0, alpha, depth, flag);
+            b.tt.put(b.getPositionKey(), bestMove != null ? bestMove.move : 0, maxEval, depth, flag);
         }
 
         return maxEval;
