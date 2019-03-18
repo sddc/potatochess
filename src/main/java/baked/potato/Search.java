@@ -16,7 +16,7 @@ public class Search implements Runnable {
 
     public Search(Board b, int depth, int time) {
         this.b = b;
-        this.depth = depth > 0 ? depth : MAX_PLY;
+        this.depth = depth <= 0 ? MAX_PLY : depth;
         if(time <= 0) {
             infinite = true;
         } else {

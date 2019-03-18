@@ -4,14 +4,16 @@ public abstract class MoveGen {
 	// wp, wr, wn, wb, wq, wk, bp, br, bn, bb, bq, bk
 	protected static final int[] pieceValues = {1, 5, 3, 3, 9, 20, 1, 5, 3, 3, 9, 20};
 
-	protected static MoveGen[] moveGens = {
-	       PawnMoveGen.getInstance(),	
-	       RookMoveGen.getInstance(),	
-	       KnightMoveGen.getInstance(),	
-	       BishopMoveGen.getInstance(),	
-	       QueenMoveGen.getInstance(),	
-	       KingMoveGen.getInstance()
-	};
+	public static MoveGen[] getMoveGens() {
+	    return new MoveGen[] {
+            PawnMoveGen.getInstance(),
+            RookMoveGen.getInstance(),
+            KnightMoveGen.getInstance(),
+            BishopMoveGen.getInstance(),
+            QueenMoveGen.getInstance(),
+            KingMoveGen.getInstance()
+        };
+    }
 
 	public static Movelist getMoves(Board b, boolean captureMovesOnly) {
 		Movelist ml = new Movelist();
@@ -19,7 +21,7 @@ public abstract class MoveGen {
 		int kingSquare = Long.numberOfTrailingZeros(b.getKingBitboard(b.getActiveColor()));
 		long kingAttackers = 0;
 
-		for(MoveGen mg : moveGens) {
+		for(MoveGen mg : getMoveGens()) {
 			if(mg instanceof KingMoveGen) continue;
 			kingAttackers |= mg.attackers(b, b.getActiveColor(), kingSquare);
 		}
@@ -41,15 +43,15 @@ public abstract class MoveGen {
 				movemask |= Mask.between(kingSquare, attackerSquare);
 			}
 
-			for (MoveGen mg : moveGens) {
+			for (MoveGen mg : getMoveGens()) {
 				mg.generateMoves(b, ml, captureMovesOnly, true, movemask, getPinnedPieces(b, kingSquare));
 			}
 		} else if(numAttackers == 2) {
 			// generate only king moves
-			moveGens[5].generateMoves(b, ml, captureMovesOnly, true, -1, 0);
+			KingMoveGen.getInstance().generateMoves(b, ml, captureMovesOnly, true, -1, 0);
 		} else {
 			// generate moves normally
-			for (MoveGen mg : moveGens) {
+			for (MoveGen mg : getMoveGens()) {
 				mg.generateMoves(b, ml, captureMovesOnly, false, -1, getPinnedPieces(b, kingSquare));
 			}
 		}
@@ -60,7 +62,7 @@ public abstract class MoveGen {
 	public static long attackedSquares(Board b, boolean side) {
 		long squares = 0;
 
-		for(MoveGen mg : moveGens) {
+		for(MoveGen mg : getMoveGens()) {
 			if(mg instanceof PawnMoveGen) {
 				squares |= ((PawnMoveGen) mg).genPawnAttack(side, b.getPawnBitboard(side));
 			} else if(mg instanceof KnightMoveGen) {
@@ -116,7 +118,7 @@ public abstract class MoveGen {
 	}
 
 	public static boolean isKingInCheck(Board b, boolean side) {
-		for(MoveGen mg : moveGens) {
+		for(MoveGen mg : getMoveGens()) {
 			if(mg.squareAttacked(b, side, Long.numberOfTrailingZeros(b.getKingBitboard(side)))) {
 				return true;
 			}

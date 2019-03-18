@@ -123,7 +123,7 @@ public class KingMoveGen extends MoveGen {
 
 		// check if opponent is attacking squares king passes
 		// make/unmake will test square king ends up on
-		for(MoveGen mg : moveGens) {
+		for(MoveGen mg : getMoveGens()) {
 			if(mg.squareAttacked(b, side, attackedSq)) {
 				return true;
 			}

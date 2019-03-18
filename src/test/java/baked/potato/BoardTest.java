@@ -104,7 +104,7 @@ public class BoardTest {
         cb = Game.parseFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
         m = new Move(Square.E2, Square.E4);
         cb.move(m);
-        expectedPosKey = Game.parseFen("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e4 0 1").getPositionKey();
+        expectedPosKey = Game.parseFen("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1").getPositionKey();
         assertEquals(expectedPosKey, cb.getPositionKey());
 
         cb = Game.parseFen("rnbqkbnr/1pp1pppp/p7/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 1");
@@ -135,16 +135,20 @@ public class BoardTest {
         Board cb = Game.parseFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
         assertEquals(null, cb.tt.get(cb.getPositionKey()));
 
-        cb.tt.put(cb.getPositionKey(), null, 0, 0, 0);
+        cb.tt.put(cb.getPositionKey(), null, 0, 0, 0); // no flag
+        assertEquals(null, cb.tt.get(cb.getPositionKey()));
+
+        cb.tt.put(cb.getPositionKey(), null, 0, 0, TTEntry.flagPvNode);
         assertNotEquals(null, cb.tt.get(cb.getPositionKey()));
 
         cb.tt.incAge();
-        cb.tt.put(cb.getPositionKey(), null, 0, 1, 0);
+        cb.tt.put(cb.getPositionKey(), null, 0, 1, TTEntry.flagAllNode);
         assertNotEquals(null, cb.tt.get(cb.getPositionKey()));
 
-        cb.tt.put(cb.getPositionKey(), null, 0, 2, 0);
+        cb.tt.put(cb.getPositionKey(), null, 0, 2, TTEntry.flagCutNode);
         assertEquals(1, cb.tt.get(cb.getPositionKey()).age);
         assertEquals(2, cb.tt.get(cb.getPositionKey()).depth);
+        assertEquals(TTEntry.flagCutNode, cb.tt.get(cb.getPositionKey()).flag);
 
         cb.tt.clear();
         assertEquals(null, cb.tt.get(cb.getPositionKey()));

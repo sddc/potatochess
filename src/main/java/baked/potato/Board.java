@@ -20,7 +20,7 @@ public class Board {
 
 	private boolean activeColor;
 
-	private int epSquare = Square.NO_SQ.intValue;
+	private int epSquare;
 
 	public int getFiftyMove() {
 		return fiftyMove;
@@ -55,16 +55,7 @@ public class Board {
 		this.activeColor = activeColor;
 		this.fiftyMove = fiftyMove;
 		this.fullMove = fullMove;
-
-		if(epSquare != Square.NO_SQ.intValue) {
-			long epSquareMask = 1L << epSquare + (activeColor ? -8 : 8);
-			long sidePawns = ((epSquareMask & Mask.clearFileH) << 1) | ((epSquareMask & Mask.clearFileA) >>> 1);
-
-			if (activeColor && (sidePawns & bitboards[Piece.WHITE_PAWN.intValue]) != 0 ||
-					!activeColor && (sidePawns & bitboards[Piece.BLACK_PAWN.intValue]) != 0) {
-				this.epSquare = epSquare;
-			}
-		}
+		this.epSquare = epSquare;
 
 		whitePieces = genSidePieces(Board.WHITE);
 		blackPieces = genSidePieces(Board.BLACK); 
